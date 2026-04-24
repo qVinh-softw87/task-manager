@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 
 const taskRoutes = require("./routes/taskRoutes");
-const authRoutes = require("./routes/authRoutes")
+const authRoutes = require("./routes/authRoutes");
 
 // middleware convert Json to Object
 app.use(express.json());
