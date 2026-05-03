@@ -7,7 +7,7 @@ const taskRoutes = require("./routes/taskRoutes");
 const authRoutes = require("./routes/authRoutes");
 const {
     notFound,
-    errorHandler
+    errorHandler,
 } = require("./middleware/errorMiddleware");
 
 // middleware convert Json to Object
@@ -22,13 +22,13 @@ app.get("/api-docs.json", (req, res) => {
     res.send(swaggerSpec);
 });
 
-// Route all request starting with /api/auth to authRoutes to handler
+// Register middleware: Route all request starting with /api/auth to authRoutes to handler
 app.use("/api/auth", authRoutes);
-// Route all requests starting with /api/task to taskRoutes to handler
+// Register middleware: Route all requests starting with /api/task to taskRoutes to handler
 app.use("/api/tasks", taskRoutes);
-// middleware handler not found
+// Register middleware: handler not found
 app.use(notFound);
-// Handle unhandled errors and errors from next(error)/throw
+// Register middleware: Handle unhandled errors and errors from next(error)/throw
 app.use(errorHandler);
 
 module.exports = app;

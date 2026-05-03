@@ -13,7 +13,7 @@ exports.protect = async (req, res, next) => {
         // Check token
         if (!token) {
             return res.status(401).json({
-                message: "Not authorized, no token"
+                message: "Not authorized, no token",
             });
         }
 
@@ -24,7 +24,7 @@ exports.protect = async (req, res, next) => {
         const user = await User.findById(decoded.userId);
         if (!user) {
             return res.status(401).json({
-                message: "Not authorized, user not found"
+                message: "Not authorized, user not found",
             });
         }
 
@@ -33,7 +33,7 @@ exports.protect = async (req, res, next) => {
         next();
     } catch (error) {
         return res.status(401).json({
-            message: error.message
+            message: error.message,
         });
     }
 };

@@ -40,6 +40,21 @@ const options = {
                         password: { type: "string", example: "123456" },
                     },
                 },
+                UpdateProfileRequest: {
+                    type: "object",
+                    properties: {
+                        name: { type: "string", example: "Vinh Updated" },
+                        email: { type: "string", example: "vinh.updated@example.com" },
+                    },
+                },
+                ChangePasswordRequest: {
+                    type: "object",
+                    required: ["currentPassword", "newPassword"],
+                    properties: {
+                        currentPassword: { type: "string", example: "123456" },
+                        newPassword: { type: "string", example: "654321" },
+                    },
+                },
                 TaskRequest: {
                     type: "object",
                     required: ["title"],
@@ -113,6 +128,48 @@ const options = {
                     },
                 },
             },
+            "/api/auth/profile": {
+                patch: {
+                    tags: ["Auth"],
+                    summary: "Update current authenticated user's profile",
+                    security: [{ bearerAuth: [] }],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            "application/json": {
+                                schema: { $ref: "#/components/schemas/UpdateProfileRequest" },
+                            },
+                        },
+                    },
+                    responses: {
+                        200: { description: "Profile updated successfully" },
+                        400: { description: "Invalid update fields or invalid input" },
+                        401: { description: "Unauthorized" },
+                        404: { description: "User not found" },
+                    },
+                },
+            },
+            "/api/auth/change-password": {
+                put: {
+                    tags: ["Auth"],
+                    summary: "Change current authenticated user's password",
+                    security: [{ bearerAuth: [] }],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            "application/json": {
+                                schema: { $ref: "#/components/schemas/ChangePasswordRequest" },
+                            },
+                        },
+                    },
+                    responses: {
+                        200: { description: "Password updated successfully" },
+                        400: { description: "Invalid password input" },
+                        401: { description: "Current password is incorrect or unauthorized" },
+                        404: { description: "User not found" },
+                    },
+                },
+            },
             "/api/tasks": {
                 get: {
                     tags: ["Tasks"],
@@ -136,7 +193,7 @@ const options = {
                         },
                     },
                     responses: {
-                        200: { description: "Task created successfully" },
+                        201: { description: "Task created successfully" },
                         400: { description: "Invalid input" },
                         401: { description: "Unauthorized" },
                     },
