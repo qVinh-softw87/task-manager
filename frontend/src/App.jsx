@@ -1,15 +1,16 @@
 import { useState } from "react";
+import TaskForm from "./components/TaskForm";
+import TaskList from "./components/TaskList";
 
 export default function App() {
   const [title, setTitle] = useState("");
   const [tasks, setTasks] = useState([]);
 
   function handleAddTask() {
-    if (title.trim() === "") return;
-
+    if(title.trim() === "") return 
     const newTask = {
-      id: Date.now(),
-      title: title,
+      id = Date.now(),
+      title,
       completed: false,
     };
 
@@ -26,10 +27,11 @@ export default function App() {
       tasks.map((task) => {
         if(task.id === id) {
           return {
-          ...task,
-          completed: !task.completed,
-        };
+            ...task,
+            completed: !task.completed,
+          };
         }
+
         return task;
       })
     );
@@ -39,33 +41,17 @@ export default function App() {
     <>
       <h1>Task Manager</h1>
 
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Enter task title"
+      <TaskForm
+        title={title}
+        setTitle={setTitle}
+        onAddTask={handleAddTask}
       />
 
-      <button onClick={handleAddTask}>Add Task</button>
-
-      <ul>
-        {tasks.map((task) => (
-          <li key={task.id}>
-            <span
-              onClick={() => handleToggleTask(task.id)}
-              style={{
-                cursor: "pointer",
-                textDecoration: task.completed ? "line-through" : "none",
-              }}
-            >
-              {task.completed ? "✅" : "❌"} {task.title}
-            </span>
-
-            <button onClick={() => handleDeleteTask(task.id)}>
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
+      <TaskList
+        tasks={tasks}
+        onDeleteTask={onDeleteTask}
+        onToggleTask={onToggleTask}
+      />
     </>
   );
 }
