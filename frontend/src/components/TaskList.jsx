@@ -34,7 +34,7 @@ export default function TaskList({ tasks, onDeleteTask, onChangeStatus, onEditTa
                 <ul className="space-y-3">
                   {filteredTasks.map((task) => (
                     <TaskCard
-                      key={task.id}
+                      key={task._id}
                       task={task}
                       onDeleteTask={onDeleteTask}
                       onChangeStatus={onChangeStatus}

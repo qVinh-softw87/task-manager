@@ -28,7 +28,7 @@ export default function TaskCard({
                         <button
                             className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
                             onClick={() => {
-                                onEditTask(task.id, editTitle);
+                                onEditTask(task._id, editTitle);
                                 setIsEditing(false);
                             }}
                         >
@@ -71,7 +71,7 @@ export default function TaskCard({
                 <select
                     className="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
                     value={task.status}
-                    onChange={(e) => onChangeStatus(task.id, e.target.value)}
+                    onChange={(e) => onChangeStatus(task._id, e.target.value)}
                 >
                     {TASK_STATUSES.map((status) => (
                         <option key={status} value={status}>
@@ -82,7 +82,7 @@ export default function TaskCard({
 
                 <button
                     className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
-                    onClick={() => onDeleteTask(task.id)}
+                    onClick={() => onDeleteTask(task._id)}
                 >
                     Delete
                 </button>

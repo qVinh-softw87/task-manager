@@ -1,9 +1,24 @@
-const API_URL = import.meta.env.VITE_API_URL||"http://localhost:3000";
+import { getToken } from "../utils/tokenStorage";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+function getAuthHeaders() {
+  const token = getToken();
+
+  if(!token) return {};
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}        
 
 export async function getTasks() {
-  const res = await fetch(`${API_URL}/api/tasks`)
+  const res = await fetch(`${API_URL}/api/tasks`, {
+    headers: {
+      ...getAuthHeaders(),
+    }
+  });
 
-  if(!res.ok) {
+  if (!res.ok) {
     throw new Error("Failed to fetch tasks");
   }
 
@@ -14,13 +29,14 @@ export async function createTask(taskData) {
   const res = await fetch(`${API_URL}/api/tasks`, {
     method: "POST",
     headers: {
-      "Content-type": "application/json",
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(taskData),
   });
 
-  if(!res.ok) {
-    throw new Error("Failed to fetch tasks");
+  if (!res.ok) {
+    throw new Error("Failed to create task");
   }
 
   return res.json();
@@ -28,14 +44,15 @@ export async function createTask(taskData) {
 
 export async function updateTask(id, taskData) {
   const res = await fetch(`${API_URL}/api/tasks/${id}`, {
-    method:"PUT",
-    header: {
-      "Content-type": "application/json",
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(taskData),
   });
 
-  if(!res.ok) {
+  if (!res.ok) {
     throw new Error("Failed to update task");
   }
 
@@ -45,11 +62,14 @@ export async function updateTask(id, taskData) {
 export async function deleteTask(id) {
   const res = await fetch(`${API_URL}/api/tasks/${id}`, {
     method: "DELETE",
+    headers: {
+      ...getAuthHeaders(),
+    },
   });
 
-  if(!res.ok) {
+  if (!res.ok) {
     throw new Error("Failed to delete task");
   }
 
-  return res.json;
+  return res.json();
 }

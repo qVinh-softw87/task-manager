@@ -1,78 +1,25 @@
-import { useState } from "react";
-import TaskForm from "./components/TaskForm";
-import TaskList from "./components/TaskList";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+import DashboardPage from "./pages/DashboardPage";
+import LoginPage from "./pages/LoginPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import RegisterPage from "./pages/RegisterPage";
 
 export default function App() {
-  const [title, setTitle] = useState("");
-  const [tasks, setTasks] = useState([]);
-
-  function handleAddTask() {
-    const trimmedTitle = title.trim();
-
-    if (trimmedTitle === "") return;
-
-    const newTask = {
-      id: Date.now(),
-      title: trimmedTitle,
-      status: "pending",
-    };
-
-    setTasks([...tasks, newTask]);
-    setTitle("");
-  }
-
-  function handleDeleteTask(id) {
-    setTasks(tasks.filter((task) => task.id !== id));
-  }
-
-  function handleEditTask(id, newTitle) {
-    const trimmedTitle = newTitle.trim();
-
-    if (trimmedTitle === "") return;
-
-    setTasks(
-      tasks.map((task) => {
-        if (task.id === id) {
-          return {
-            ...task,
-            title: trimmedTitle,
-          };
-        }
-        return task;
-      })
-    );
-  }
-
-  function handleChangeState(id, newStatus) {
-    setTasks(
-      tasks.map((task) => {
-        if (task.id === id) {
-          return {
-            ...task,
-            status: newStatus,
-          };
-        }
-        return task;
-      })
-    );
-  }
-
   return (
-    <main className="mx-auto min-h-screen max-w-6xl bg-slate-50 px-4 py-8 text-slate-900">
-      <h1 className="mb-6 text-3xl font-bold">Task Manager</h1>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      <TaskForm
-        title={title}
-        setTitle={setTitle}
-        onAddTask={handleAddTask}
-      />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+        </Route>
 
-      <TaskList
-        tasks={tasks}
-        onDeleteTask={handleDeleteTask}
-        onChangeStatus={handleChangeState}
-        onEditTask={handleEditTask}
-      />
-    </main>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
