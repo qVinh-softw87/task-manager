@@ -1,6 +1,8 @@
 const express = require("express");
+const cors = require("cors");
 const swaggerUi = require("swagger-ui-express");
 const app = express();
+
 
 const swaggerSpec = require("./config/swagger");
 const taskRoutes = require("./routes/taskRoutes");
@@ -9,6 +11,10 @@ const {
     notFound,
     errorHandler,
 } = require("./middleware/errorMiddleware");
+
+app.use(cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+}));
 
 // middleware convert Json to Object
 app.use(express.json());
