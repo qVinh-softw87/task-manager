@@ -4,7 +4,6 @@ import TaskList from "../components/TaskList";
 import { useAuth } from "../hooks/useAuth";
 import { useTasks } from "../hooks/useTasks";
 
-// Biểu tượng Sidebar chuẩn Notion
 const SidebarIcon = ({ className }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -23,14 +22,13 @@ const SidebarIcon = ({ className }) => (
 
 export default function DashboardPage() {
   const [title, setTitle] = useState("");
-  
-  // Notion Sidebar States
+
   const [isPinned, setIsPinned] = useState(() => {
     const saved = localStorage.getItem("sidebar_pinned");
     return saved !== null ? JSON.parse(saved) : true;
   });
   const [isHovered, setIsHovered] = useState(false);
-  
+
   const { user, logoutUser } = useAuth();
   const {
     tasks,
@@ -62,8 +60,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-white text-slate-900 relative overflow-x-hidden">
-      
-      {/* 1. NÚT KÍCH HOẠT NỔI (Chỉ hiển thị khi Sidebar bị đóng hoàn toàn) */}
+
       {!isPinned && (
         <button
           onMouseEnter={() => setIsHovered(true)}
@@ -79,7 +76,6 @@ export default function DashboardPage() {
         </button>
       )}
 
-      {/* 2. SIDEBAR CONTAINER */}
       <aside
         onMouseLeave={() => setIsHovered(false)}
         className={`
@@ -91,7 +87,6 @@ export default function DashboardPage() {
           ${isSidebarVisible ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        {/* Header Sidebar */}
         <div className="mx-2 mt-2 flex items-center justify-between rounded-md px-1 py-1">
           <div className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-slate-100 flex-1">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-indigo-100 text-xs font-bold text-indigo-700">
@@ -100,7 +95,6 @@ export default function DashboardPage() {
             <span className="text-sm font-semibold truncate">TaskManager</span>
           </div>
           
-          {/* Nút ẩn sidebar chuẩn Notion */}
           <button
             onClick={() => {
               setIsPinned(false);
@@ -114,7 +108,6 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Navigation links */}
         <nav className="mt-2 space-y-1 px-2 text-sm">
           <div className="rounded-md bg-indigo-50 px-3 py-2 font-medium text-indigo-700">
             All tasks
@@ -132,7 +125,6 @@ export default function DashboardPage() {
 
         <div className="flex-1" />
 
-        {/* User profile footer */}
         <div className="border-t border-slate-200 p-2">
           <div className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-slate-100">
             <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
@@ -150,14 +142,12 @@ export default function DashboardPage() {
         </div>
       </aside>
 
-      {/* 3. NỘI DUNG CHÍNH (MAIN CONTENT) */}
       <main 
         onMouseEnter={() => setIsHovered(false)}
         className="min-w-0 flex-1 px-6 py-8 lg:px-16 transition-all duration-300"
       >
-        
         <div className="mb-6 flex items-center gap-4">
-          <div className="mb-2 text-5xl">✅</div>
+          <div className="mb-2 text-5xl"></div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Task Manager</h1>
             <p className="mt-1 text-sm text-slate-500">
@@ -166,7 +156,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Task Form và Task List */}
         <div className="mb-6">
           <TaskForm 
             title={title} 
