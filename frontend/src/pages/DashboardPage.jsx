@@ -4,9 +4,28 @@ import TaskList from "../components/TaskList";
 import { useAuth } from "../hooks/useAuth";
 import { useTasks } from "../hooks/useTasks";
 
+const SidebarIcon = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect x="3" y="4" width="18" height="16" rx="2.5" ry="2.5" />
+    <line x1="9" y1="4" x2="9" y2="20" />
+  </svg>
+);
+
 export default function DashboardPage() {
   const [title, setTitle] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const [isPinned, setIsPinned] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+
   const { user, logoutUser } = useAuth();
   const {
     tasks,
@@ -25,77 +44,125 @@ export default function DashboardPage() {
 
   async function handleAddTask() {
     const trimmedTitle = title.trim();
-
     if (trimmedTitle === "") return;
 
     await addTask({
       title: trimmedTitle,
       status: "pending",
     });
-
     setTitle("");
   }
 
+  const isSidebarVisible = isPinned || isHovered;
+
   return (
-    <div className="flex min-h-screen bg-white text-slate-900">
-      {sidebarOpen && (
-        <aside className="sticky top-0 flex h-screen w-56 flex-shrink-0 flex-col border-r border-slate-200 bg-slate-50">
-          <div className="mx-2 mt-2 flex cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 hover:bg-slate-100">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-indigo-100 text-xs">
-              TM
-            </div>
-            <span className="flex-1 text-sm font-semibold">TaskManager</span>
-          </div>
+    <div className="flex min-h-screen bg-white text-slate-900 relative overflow-x-hidden">
 
-          <nav className="mt-2 space-y-1 px-2 text-sm">
-            <div className="rounded-md bg-indigo-50 px-3 py-2 font-medium text-indigo-700">
-              All tasks
-            </div>
-            <div className="cursor-pointer rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-              This week
-            </div>
-            <div className="cursor-pointer rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-              Overview
-            </div>
-            <div className="cursor-pointer rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-              Completed
-            </div>
-          </nav>
-
-          <div className="flex-1" />
-
-          <div className="border-t border-slate-200 p-2">
-            <div className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-slate-100">
-              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
-                {initials}
-              </div>
-              <span className="flex-1 truncate text-sm">{displayName}</span>
-              <button
-                className="text-xs text-slate-500 hover:text-slate-900"
-                onClick={logoutUser}
-                title="Logout"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </aside>
+      { }
+      {!isPinned && (
+        <button
+          onMouseEnter={() => setIsHovered(true)}
+          onClick={() => {
+            setIsPinned(true);
+            setIsHovered(false);
+          }}
+          className="fixed left-4 top-4 z-40 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all duration-200 shadow-sm border border-slate-200/50 bg-white cursor-pointer"
+          title="Open sidebar"
+        >
+          <SidebarIcon className="h-5 w-5" />
+        </button>
       )}
 
-      <main className="min-w-0 flex-1 px-6 py-8 lg:px-16">
-        <button
-          className="mb-6 text-sm text-slate-400 hover:text-slate-700"
-          onClick={() => setSidebarOpen((current) => !current)}
-        >
-          {sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-        </button>
+      { }
+      <aside
+        onMouseLeave={() => setIsHovered(false)}
+        className={`
+          flex h-screen flex-col border-r border-slate-200 bg-slate-50 transition-all duration-300 ease-in-out
+          ${isPinned
+            ? "sticky top-0 w-56 flex-shrink-0 translate-x-0"
+            : "fixed left-0 top-0 z-50 w-56 shadow-2xl"
+          }
+          ${isSidebarVisible ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        { }
+        <div className="mx-2 mt-2 flex items-center justify-between rounded-md px-1 py-1">
+          <div className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-slate-100 flex-1">
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-indigo-100 text-xs font-bold text-indigo-700">
+              TM
+            </div>
+            <span className="text-sm font-semibold truncate">TaskManager</span>
+          </div>
 
+          { }
+          <button
+            onClick={() => {
+              setIsPinned(false);
+              setIsHovered(false);
+            }}
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition cursor-pointer"
+            title="Close sidebar"
+          >
+            <SidebarIcon className="h-4.5 w-4.5" />
+          </button>
+        </div>
+
+        { }
+        <nav className="mt-2 space-y-1 px-2 text-sm">
+          <div className="rounded-md bg-indigo-50 px-3 py-2 font-medium text-indigo-700">
+            All tasks
+          </div>
+          <div className="cursor-pointer rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+            This week
+          </div>
+          <div className="cursor-pointer rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+            Overview
+          </div>
+          <div className="cursor-pointer rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+            Completed
+          </div>
+        </nav>
+
+        <div className="flex-1" />
+
+        { }
+        <div className="border-t border-slate-200 p-2">
+          <div className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-slate-100">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
+              {initials}
+            </div>
+            <span className="flex-1 truncate text-sm">{displayName}</span>
+            <button
+              className="text-xs text-slate-500 hover:text-slate-900 cursor-pointer"
+              onClick={logoutUser}
+              title="Logout"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      { }
+      <main className="min-w-0 flex-1 px-6 py-8 lg:px-16 transition-all duration-300">
+
+        <div className="mb-6 flex items-center gap-4">
+          <div className="mb-2 text-5xl"></div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Task Manager</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Signed in as {user?.email || displayName}
+            </p>
+          </div>
+        </div>
+
+        { }
         <div className="mb-6">
-          <div className="mb-2 text-5xl">✅</div>
-          <h1 className="text-3xl font-bold tracking-tight">Task Manager</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Signed in as {user?.email || displayName}
-          </p>
+          <TaskForm
+            title={title}
+            setTitle={setTitle}
+            onAddTask={handleAddTask}
+          />
         </div>
 
         <div className="mb-6 grid gap-3 sm:grid-cols-2">
@@ -107,28 +174,19 @@ export default function DashboardPage() {
           </div>
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Completed
+              Completed tasks
             </p>
-            <p className="mt-1 text-2xl font-semibold">
-              {completedTasks} / {totalTasks}
-            </p>
+            <p className="mt-1 text-2xl font-semibold">{completedTasks}</p>
           </div>
         </div>
 
-        <TaskForm
-          title={title}
-          setTitle={setTitle}
-          onAddTask={handleAddTask}
-        />
-
-        {loading && <p className="text-sm text-slate-500">Loading tasks...</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
         <TaskList
           tasks={tasks}
-          onDeleteTask={removeTask}
-          onChangeStatus={changeStatus}
+          loading={loading}
+          error={error}
           onEditTask={editTask}
+          onChangeStatus={changeStatus}
+          onRemoveTask={removeTask}
         />
       </main>
     </div>
