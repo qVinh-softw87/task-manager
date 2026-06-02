@@ -21,8 +21,8 @@ export default function RegisterPage() {
         password,
       });
       navigate("/dashboard");
-    } catch {
-      setFormError("Registration failed. The email may already be in use.");
+    } catch (err) {
+      setFormError(err.message || "Registration failed. Please try again.");
     }
   }
 

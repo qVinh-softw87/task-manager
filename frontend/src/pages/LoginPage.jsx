@@ -19,8 +19,8 @@ export default function LoginPage() {
         password,
       });
       navigate("/dashboard");
-    } catch {
-      setFormError("Email or password is incorrect.");
+    } catch (err) {
+      setFormError(err.message || "Email or password is incorrect.");
     }
   }
 
