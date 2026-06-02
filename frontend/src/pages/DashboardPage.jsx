@@ -4,6 +4,7 @@ import TaskList from "../components/TaskList";
 import { useAuth } from "../hooks/useAuth";
 import { useTasks } from "../hooks/useTasks";
 
+// Biểu tượng Sidebar chuẩn Notion
 const SidebarIcon = ({ className }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -23,6 +24,7 @@ const SidebarIcon = ({ className }) => (
 export default function DashboardPage() {
   const [title, setTitle] = useState("");
 
+  // Trạng thái ghim cố định và rê chuột
   const [isPinned, setIsPinned] = useState(() => {
     const saved = localStorage.getItem("sidebar_pinned");
     return saved !== null ? JSON.parse(saved) : true;
@@ -61,6 +63,7 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen bg-white text-slate-900 relative overflow-x-hidden">
 
+      {/* 1. NÚT NỔI Ở GÓC TRÁI (Chỉ hiển thị khi Sidebar đang ẩn) */}
       {!isPinned && (
         <button
           onMouseEnter={() => setIsHovered(true)}
@@ -69,45 +72,36 @@ export default function DashboardPage() {
             setIsHovered(false);
             localStorage.setItem("sidebar_pinned", "true");
           }}
-          className="fixed left-4 top-4 z-40 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all duration-200 shadow-sm border border-slate-200/50 bg-white cursor-pointer"
+          className="fixed left-4 top-4 z-50 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all duration-200 shadow-sm border border-slate-200/50 bg-white cursor-pointer"
           title="Open sidebar"
         >
           <SidebarIcon className="h-5 w-5" />
         </button>
       )}
 
+      {/* 2. SIDEBAR CONTAINER (Không chứa nút toggle nữa) */}
       <aside
         onMouseLeave={() => setIsHovered(false)}
         className={`
           flex h-screen flex-col border-r border-slate-200 bg-slate-50 transition-all duration-300 ease-in-out
           ${isPinned 
             ? "sticky top-0 w-56 flex-shrink-0 translate-x-0" 
-            : "fixed left-0 top-0 z-50 w-56 shadow-2xl"
+            : "fixed left-0 top-0 z-40 w-56 shadow-2xl"
           }
           ${isSidebarVisible ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        <div className="mx-2 mt-2 flex items-center justify-between rounded-md px-1 py-1">
+        {/* Header Sidebar */}
+        <div className="mx-2 mt-2 flex items-center rounded-md px-1 py-1">
           <div className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-slate-100 flex-1">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-indigo-100 text-xs font-bold text-indigo-700">
               TM
             </div>
             <span className="text-sm font-semibold truncate">TaskManager</span>
           </div>
-          
-          <button
-            onClick={() => {
-              setIsPinned(false);
-              setIsHovered(false);
-              localStorage.setItem("sidebar_pinned", "false");
-            }}
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition cursor-pointer"
-            title="Close sidebar"
-          >
-            <SidebarIcon className="h-4.5 w-4.5" />
-          </button>
         </div>
 
+        {/* Navigation links */}
         <nav className="mt-2 space-y-1 px-2 text-sm">
           <div className="rounded-md bg-indigo-50 px-3 py-2 font-medium text-indigo-700">
             All tasks
@@ -125,6 +119,7 @@ export default function DashboardPage() {
 
         <div className="flex-1" />
 
+        {/* User profile footer */}
         <div className="border-t border-slate-200 p-2">
           <div className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-slate-100">
             <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
@@ -142,12 +137,28 @@ export default function DashboardPage() {
         </div>
       </aside>
 
+      {/* 3. NỘI DUNG CHÍNH (MAIN CONTENT) */}
       <main 
-        onMouseEnter={() => setIsHovered(false)}
+        onMouseEnter={() => { if (isHovered) setIsHovered(false); }}
         className="min-w-0 flex-1 px-6 py-8 lg:px-16 transition-all duration-300"
       >
-        <div className="mb-6 flex items-center gap-4">
-          <div className="mb-2 text-5xl"></div>
+        {/* Header với nút Toggle khi Sidebar đang mở */}
+        <div className="mb-6 flex items-start gap-4">
+          
+          {isPinned && (
+            <button
+              onClick={() => {
+                setIsPinned(false);
+                setIsHovered(false);
+                localStorage.setItem("sidebar_pinned", "false");
+              }}
+              className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition duration-200 cursor-pointer flex-shrink-0"
+              title="Close sidebar"
+            >
+              <SidebarIcon className="h-5 w-5" />
+            </button>
+          )}
+
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Task Manager</h1>
             <p className="mt-1 text-sm text-slate-500">
@@ -156,6 +167,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Task Form và Task List */}
         <div className="mb-6">
           <TaskForm 
             title={title} 
