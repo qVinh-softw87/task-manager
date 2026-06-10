@@ -1,5 +1,6 @@
 const User = require("../models/User");
-const generateToken = require("../utils/generateToken");
+const { generateAccessToken, generateRefreshToken } = require("../utils/generateToken");
+const jwt = require("jsonwebtoken");
 
 // Register
 exports.register = async (req, res) => {
@@ -29,6 +30,16 @@ exports.register = async (req, res) => {
             password,
         });
 
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+
         return res.status(201).json({
             message: "Register successful",
             data: {
@@ -36,7 +47,7 @@ exports.register = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token: generateToken(user._id),
+                token: accessToken,
             },
         });
     } catch (error) {
@@ -75,6 +86,16 @@ exports.login = async (req, res) => {
             });
         }
 
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+
         return res.status(200).json({
             message: "Login successful",
             data: {
@@ -82,7 +103,7 @@ exports.login = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token: generateToken(user._id),
+                token: accessToken,
             },
         });
     } catch (error) {
@@ -272,6 +293,83 @@ exports.changePassword = async (req, res) => {
 
         return res.status(200).json({
             message: "Password updated successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message,
+        });
+    }
+};
+
+// Refresh Token
+exports.refresh = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+
+        if (!refreshToken) {
+            return res.status(401).json({
+                message: "No refresh token provided",
+            });
+        }
+
+        let decoded;
+        try {
+            decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+        } catch (err) {
+            return res.status(403).json({
+                message: "Token is not valid or expired",
+            });
+        }
+
+        // Check if user still exists
+        const user = await User.findById(decoded.userId);
+        if (!user) {
+            return res.status(403).json({
+                message: "User not found",
+            });
+        }
+
+        // Generate new pair of tokens (Sliding Session)
+        const newAccessToken = generateAccessToken(user._id);
+        const newRefreshToken = generateRefreshToken(user._id);
+
+        // Send new refresh token in HTTP-only cookie
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+
+        return res.status(200).json({
+            message: "Token refreshed successfully",
+            data: {
+                token: newAccessToken,
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                },
+            },
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message,
+        });
+    }
+};
+
+// Logout
+exports.logout = async (req, res) => {
+    try {
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+        });
+        return res.status(200).json({
+            message: "Logged out successfully",
         });
     } catch (error) {
         return res.status(500).json({

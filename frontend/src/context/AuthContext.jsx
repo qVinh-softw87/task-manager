@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as authApi from "../api/authApi";
-import { getToken, removeToken, setToken } from "../utils/tokenStorage";
+import { setAccessToken } from "../api/axiosClient";
 import { AuthContext } from "./authContextValue";
 
 export function AuthProvider({ children }) {
@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
       const result = await authApi.login(credentials);
       const authUser = result.data;
 
-      setToken(authUser.token);
+      setAccessToken(authUser.token);
       setUser(authUser);
 
       return authUser;
@@ -36,7 +36,7 @@ export function AuthProvider({ children }) {
       const result = await authApi.register(userData);
       const authUser = result.data;
 
-      setToken(authUser.token);
+      setAccessToken(authUser.token);
       setUser(authUser);
 
       return authUser;
@@ -48,21 +48,21 @@ export function AuthProvider({ children }) {
     }
   }
 
-  function logoutUser() {
-    removeToken();
-    setUser(null);
-    setError(null);
+  async function logoutUser() {
+    try {
+      setLoading(true);
+      await authApi.logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+      setError(null);
+      setLoading(false);
+    }
   }
 
   async function loadCurrentUser() {
-    const token = getToken();
-
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
@@ -71,7 +71,7 @@ export function AuthProvider({ children }) {
 
       setUser(result.data);
     } catch {
-      removeToken();
+      setAccessToken(null);
       setUser(null);
     } finally {
       setLoading(false);
@@ -79,11 +79,18 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const timerId = setTimeout(() => {
-      loadCurrentUser();
-    }, 0);
+    const handleLogout = () => {
+      setAccessToken(null);
+      setUser(null);
+    };
 
-    return () => clearTimeout(timerId);
+    window.addEventListener("auth:logout", handleLogout);
+
+    loadCurrentUser();
+
+    return () => {
+      window.removeEventListener("auth:logout", handleLogout);
+    };
   }, []);
 
   return (

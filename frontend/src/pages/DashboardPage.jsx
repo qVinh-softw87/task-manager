@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import TaskForm from "../components/TaskForm";
 import TaskList from "../components/TaskList";
 import { useAuth } from "../hooks/useAuth";
 import { useTasks } from "../hooks/useTasks";
+import { useThemeLang } from "../context/ThemeLangContext";
+import { translations } from "../utils/translations";
 
 const SidebarIcon = ({ className }) => (
   <svg
@@ -21,13 +24,41 @@ const SidebarIcon = ({ className }) => (
 );
 
 export default function DashboardPage() {
-  const [title, setTitle] = useState("");
-
+  const { theme, toggleTheme, lang, toggleLang } = useThemeLang();
   const [isPinned, setIsPinned] = useState(() => {
     const saved = localStorage.getItem("sidebar_pinned");
     return saved !== null ? JSON.parse(saved) : true;
   });
+  // isHovered: sidebar is floating open because user is hovering over toggle/sidebar
   const [isHovered, setIsHovered] = useState(false);
+  const hoverTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (isPinned) return;
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (isPinned) return;
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 120);
+  };
 
   const { user, logoutUser } = useAuth();
   const {
@@ -40,155 +71,288 @@ export default function DashboardPage() {
     removeTask,
   } = useTasks();
 
-  const displayName = user?.name || user?.email?.split("@")[0] || "You";
+  const t = translations[lang] || translations.vi;
+
+  const displayName = user?.name || user?.email?.split("@")[0] || "User";
   const initials = displayName.slice(0, 2).toUpperCase();
+  
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((task) => task.status === "completed").length;
+  const inProgressTasks = tasks.filter((task) => task.status === "in-progress").length;
+  
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  async function handleAddTask() {
-    const trimmedTitle = title.trim();
-    if (trimmedTitle === "") return;
-
-    await addTask({
-      title: trimmedTitle,
-      status: "pending",
-    });
-    setTitle("");
+  async function handleAddTask(taskData) {
+    await addTask(taskData);
   }
 
+  // Sidebar is visible when pinned OR when user hovers toggle/sidebar while unpinned
   const isSidebarVisible = isPinned || isHovered;
+  const isDark = theme === "dark";
+
+  function handleToggleClick() {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    if (isPinned) {
+      // Unpin: hide sidebar
+      setIsPinned(false);
+      setIsHovered(false);
+      localStorage.setItem("sidebar_pinned", "false");
+    } else {
+      // Re-pin: sidebar stays permanently
+      setIsPinned(true);
+      setIsHovered(false);
+      localStorage.setItem("sidebar_pinned", "true");
+    }
+  }
 
   return (
-    <div className="flex min-h-screen bg-white text-slate-900 relative overflow-x-hidden">
-
-      { }
-      {!isPinned && (
-        <button
-          onMouseEnter={() => setIsHovered(true)}
-          onClick={() => {
-            setIsPinned(true);
-            setIsHovered(false);
-            localStorage.setItem("sidebar_pinned", "true");
-          }}
-          className="fixed left-4 top-4 z-50 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all duration-200 shadow-sm border border-slate-200/50 bg-white cursor-pointer"
-          title="Open sidebar"
-        >
-          <SidebarIcon className="h-5 w-5" />
-        </button>
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -15 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      className={`flex min-h-screen relative overflow-x-hidden transition-colors duration-300 ${
+        isDark ? "bg-[#080b11] text-slate-100" : "bg-[#f8fafc] text-slate-900"
+      }`}
+    >
+      {/* Hover Bridge for smooth UX between sidebar and toggle button */}
+      {!isPinned && isHovered && (
+        <div
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          className="fixed left-0 top-[96px] h-[16px] w-[264px] lg:w-[296px] z-30 bg-transparent pointer-events-auto"
+        />
       )}
 
-      { }
-      <aside
-        onMouseLeave={() => setIsHovered(false)}
+      {/* Sidebar */}
+      <motion.aside
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        initial={false}
+        animate={{
+          x: isSidebarVisible ? 0 : -240,
+          opacity: isSidebarVisible ? 1 : 0,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 280,
+          damping: 26,
+        }}
         className={`
-          flex h-screen flex-col border-r border-slate-200 bg-slate-50 transition-all duration-300 ease-in-out
-          ${isPinned
-            ? "sticky top-0 w-56 flex-shrink-0 translate-x-0"
-            : "fixed left-0 top-0 z-40 w-56 shadow-2xl"
-          }
-          ${isSidebarVisible ? "translate-x-0" : "-translate-x-full"}
+          flex flex-col border-r fixed left-0 w-60 z-40
+          ${isPinned ? "top-0 h-screen" : "top-[112px] h-[calc(100vh-112px)]"}
+          ${!isPinned && isSidebarVisible ? "shadow-2xl" : ""}
+          ${isDark ? "border-slate-900/60 bg-[#0c101b]" : "border-slate-200/80 bg-white"}
         `}
       >
-        { }
-        <div className="mx-2 mt-2 flex items-center rounded-md px-1 py-1">
-          <div className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-slate-100 flex-1">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-indigo-100 text-xs font-bold text-indigo-700">
-              TM
+        {/* Workspace Brand - only shown when pinned */}
+        {isPinned && (
+          <div className="mx-3 mt-3 flex items-center justify-between p-1 border-b pb-3 border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg flex-1 cursor-pointer transition">
+              <div className={`flex h-7 w-7 items-center justify-center rounded-lg font-bold text-white shadow-md transition-all duration-300 ${
+                isDark 
+                  ? "bg-indigo-600 shadow-indigo-600/30" 
+                  : "bg-slate-950 shadow-slate-950/10"
+              }`}>
+                TM
+              </div>
+              <span className={`text-sm font-bold tracking-tight transition-colors duration-300 ${isDark ? "text-slate-100" : "text-slate-900"}`}>TaskManager</span>
             </div>
-            <span className="text-sm font-semibold truncate">TaskManager</span>
           </div>
-        </div>
+        )}
 
-        { }
-        <nav className="mt-2 space-y-1 px-2 text-sm">
-          <div className="rounded-md bg-indigo-50 px-3 py-2 font-medium text-indigo-700">
-            All tasks
+        {/* Navigation */}
+        <nav className="mt-4 space-y-1 px-3 text-sm">
+          <div className={`rounded-lg border px-3.5 py-2 font-semibold flex items-center gap-2.5 ${
+            isDark 
+              ? "bg-slate-800/40 border-slate-800/30 text-slate-200" 
+              : "bg-slate-100 border-slate-200/50 text-slate-800"
+          }`}>
+            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+            {t.allTasks}
           </div>
-          <div className="cursor-pointer rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-            This week
+          <div className={`cursor-pointer rounded-lg px-3.5 py-2 transition ${
+            isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+          }`}>
+            {t.overview}
           </div>
-          <div className="cursor-pointer rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-            Overview
-          </div>
-          <div className="cursor-pointer rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-            Completed
+          <div className={`cursor-pointer rounded-lg px-3.5 py-2 transition ${
+            isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+          }`}>
+            {t.analytics}
           </div>
         </nav>
 
         <div className="flex-1" />
 
-        { }
-        <div className="border-t border-slate-200 p-2">
-          <div className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-slate-100">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
+        {/* Sidebar Footer */}
+        <div className={`border-t p-3 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+          <button
+            onClick={logoutUser}
+            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-bold border transition-all duration-200 cursor-pointer ${
+              isDark
+                ? "border-slate-800 bg-slate-950/60 text-slate-400 hover:text-rose-400 hover:border-rose-950/50 hover:bg-rose-950/20"
+                : "border-slate-200 bg-white text-slate-600 hover:text-rose-650 hover:border-rose-200 hover:bg-rose-50"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-3.5 h-3.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+            </svg>
+            {t.logout}
+          </button>
+        </div>
+      </motion.aside>
+
+      {/* Main Panel */}
+      <main
+        className={`min-w-0 flex-1 pr-6 py-8 lg:pr-14 transition-all duration-300 ease-in-out ${
+          isPinned
+            ? "pl-[264px] lg:pl-[296px]"
+            : "pl-6 lg:pl-14"
+        }`}
+      >
+        {/* Header Title & Controls (Notion-style page header) */}
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className={`flex flex-col gap-2 relative z-50 w-60 ${
+              !isPinned ? "-ml-6 lg:-ml-14 pl-6 lg:pl-14" : ""
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <h1 className={`text-2xl font-bold tracking-tight ${isDark ? "text-slate-100" : "text-slate-900"}`}>
+                {t.tasksTitle}
+              </h1>
+              <button
+                onClick={handleToggleClick}
+                className={`rounded-lg p-2 cursor-pointer flex-shrink-0 border transition-all duration-150 relative z-50 ${
+                  isDark
+                    ? "border-slate-800/60 bg-[#131929] text-slate-300 hover:text-slate-100 hover:bg-slate-800/80"
+                    : "border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                } ${isHovered ? (isDark ? "text-indigo-400 border-indigo-500/50 bg-[#161f38]" : "text-indigo-600 border-indigo-200 bg-indigo-50") : ""}`}
+              >
+                {isPinned ? (
+                  /* Collapse icon pointing left */
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4.5 h-4.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
+                  </svg>
+                ) : (
+                  /* Expand icon pointing right */
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4.5 h-4.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <span className={`text-xs font-semibold truncate ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+              {displayName}
+            </span>
+          </div>
+
+          {/* Settings bar: Language, Theme Toggle & User Avatar (Facebook style) */}
+          <div className="flex items-center gap-3 mt-1.5">
+            {/* Language Toggle */}
+            <button
+              onClick={toggleLang}
+              className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm ${
+                isDark
+                  ? "border-slate-800 bg-slate-950/60 text-slate-300 hover:text-slate-100 hover:bg-slate-900/50"
+                  : "border-slate-200 bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50"
+              }`}
+              title="Switch language"
+            >
+              {lang === "vi" ? "EN" : "VI"}
+            </button>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className={`p-2 rounded-lg border transition-all duration-200 cursor-pointer shadow-sm ${
+                isDark
+                  ? "border-slate-800 bg-slate-950/60 text-amber-400 hover:text-amber-300 hover:bg-slate-900/50"
+                  : "border-slate-200 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-slate-50"
+              }`}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m0 13.5V21M4.95 4.95l1.58 1.58m9.02 9.02l1.58 1.58M3 12h2.25m13.5 0H21M5.75 5.75l1.58 1.58m9.02 9.02l1.58 1.58M12 7.75a4.25 4.25 0 100 8.5 4.25 4.25 0 000-8.5z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                </svg>
+              )}
+            </button>
+
+            {/* Facebook-style User Avatar */}
+            <div
+              className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold border transition-all duration-300 shadow-sm cursor-default ${
+                isDark 
+                  ? "border-slate-800 bg-slate-950/60 text-indigo-400" 
+                  : "border-slate-200 bg-white text-indigo-600"
+              }`}
+              title={user?.email || displayName}
+            >
               {initials}
             </div>
-            <span className="flex-1 truncate text-sm">{displayName}</span>
-            <button
-              className="text-xs text-slate-500 hover:text-slate-900 cursor-pointer"
-              onClick={logoutUser}
-              title="Logout"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      { }
-      <main
-        onMouseEnter={() => { if (isHovered) setIsHovered(false); }}
-        className="min-w-0 flex-1 px-6 py-8 lg:px-16 transition-all duration-300"
-      >
-        { }
-        <div className="mb-6 flex items-start gap-4">
-
-          {isPinned && (
-            <button
-              onClick={() => {
-                setIsPinned(false);
-                setIsHovered(false);
-                localStorage.setItem("sidebar_pinned", "false");
-              }}
-              className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition duration-200 cursor-pointer flex-shrink-0"
-              title="Close sidebar"
-            >
-              <SidebarIcon className="h-5 w-5" />
-            </button>
-          )}
-
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Task Manager</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Signed in as {user?.email || displayName}
-            </p>
           </div>
         </div>
 
-        { }
+        {/* Input Form */}
         <div className="mb-6">
-          <TaskForm
-            title={title}
-            setTitle={setTitle}
-            onAddTask={handleAddTask}
-          />
+          <TaskForm onAddTask={handleAddTask} theme={theme} />
         </div>
 
-        <div className="mb-6 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Total tasks
+        {/* Stats Panels */}
+        <div className="mb-6 grid gap-4 grid-cols-2 md:grid-cols-4">
+          <div className={`rounded-xl border p-4 shadow-sm transition backdrop-blur-md ${
+            isDark 
+              ? "border-slate-800/80 bg-slate-900/30 hover:border-slate-700/50 text-slate-200" 
+              : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md text-slate-800"
+          }`}>
+            <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              {t.totalTasks}
             </p>
-            <p className="mt-1 text-2xl font-semibold">{totalTasks}</p>
+            <p className="mt-1 text-xl font-bold">{totalTasks}</p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Completed tasks
+          <div className={`rounded-xl border p-4 shadow-sm transition backdrop-blur-md ${
+            isDark 
+              ? "border-slate-800/80 bg-slate-900/30 hover:border-slate-700/50" 
+              : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"
+          }`}>
+            <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              {t.inProgress}
             </p>
-            <p className="mt-1 text-2xl font-semibold">{completedTasks}</p>
+            <p className="mt-1 text-xl font-bold text-indigo-500">{inProgressTasks}</p>
+          </div>
+          <div className={`rounded-xl border p-4 shadow-sm transition backdrop-blur-md ${
+            isDark 
+              ? "border-slate-800/80 bg-slate-900/30 hover:border-slate-700/50" 
+              : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"
+          }`}>
+            <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              {t.completed}
+            </p>
+            <p className="mt-1 text-xl font-bold text-emerald-500">{completedTasks}</p>
+          </div>
+          <div className={`rounded-xl border p-4 shadow-sm transition backdrop-blur-md ${
+            isDark 
+              ? "border-slate-800/80 bg-slate-900/30 hover:border-slate-700/50 text-slate-200" 
+              : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md text-slate-800"
+          }`}>
+            <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              {t.completionRate}
+            </p>
+            <p className="mt-1 text-xl font-bold">{completionRate}%</p>
           </div>
         </div>
 
+        {/* Tasks columns list */}
         <TaskList
           tasks={tasks}
           loading={loading}
@@ -196,8 +360,9 @@ export default function DashboardPage() {
           onEditTask={editTask}
           onChangeStatus={changeStatus}
           onDeleteTask={removeTask}
+          theme={theme}
         />
       </main>
-    </div>
+    </motion.div>
   );
 }

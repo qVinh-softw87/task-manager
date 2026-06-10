@@ -1,1 +1,83 @@
-@import "tailwindcss"; 
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Global resets and theme transition defaults */
+html, body {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Dark mode (default root class) */
+html, body {
+  background-color: #080b11;
+  color: #f1f5f9;
+}
+
+/* Light mode overrides */
+html:not(.dark), body:not(.dark) {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Customized scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #0d121f;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Premium pulse and shimmer animations for skeleton loading */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.95; }
+  50%      { opacity: 0.7; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.5) 25%,
+    rgba(241, 245, 249, 0.95) 37%,
+    rgba(226, 232, 240, 0.5) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear, pulse-soft 2s infinite ease-in-out;
+}
+
+html.dark .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.4) 25%,
+    rgba(30, 41, 59, 0.75) 37%,
+    rgba(15, 23, 42, 0.4) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear, pulse-soft 2s infinite ease-in-out;
+}

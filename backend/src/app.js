@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const swaggerUi = require("swagger-ui-express");
 const app = express();
 
@@ -32,6 +33,9 @@ app.use(cors({
     credentials: true
 }));
 
+// Middleware to parse cookies
+app.use(cookieParser());
+
 // middleware convert Json to Object
 app.use(express.json());
 
@@ -43,6 +47,11 @@ app.get("/api-docs.json", (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.send(swaggerSpec);
 });
+
+const { apiLimiter } = require("./middleware/rateLimitMiddleware");
+
+// Apply general rate limiter to all api routes
+app.use("/api", apiLimiter);
 
 // Register middleware: Route all request starting with /api/auth to authRoutes to handler
 app.use("/api/auth", authRoutes);

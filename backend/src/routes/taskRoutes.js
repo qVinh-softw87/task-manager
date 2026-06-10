@@ -10,12 +10,16 @@ const {
 } = require("../controllers/taskController");
 
 const { protect } = require("../middleware/authMiddleware");
+const {
+    createTaskValidation,
+    updateTaskValidation,
+} = require("../middleware/validationMiddleware");
 
 // protect all task route before handling, must be login
 router.use(protect);
 
 // create task
-router.post("/", createTask);
+router.post("/", createTaskValidation, createTask);
 
 // get all tasks
 router.get("/", getTasks);
@@ -24,7 +28,7 @@ router.get("/", getTasks);
 router.get("/:id", getTaskById);
 
 // update task
-router.put("/:id", updateTask);
+router.put("/:id", updateTaskValidation, updateTask);
 
 // delete task
 router.delete("/:id", deleteTask);

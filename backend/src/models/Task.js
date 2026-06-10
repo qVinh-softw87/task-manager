@@ -31,6 +31,16 @@ const taskSchema = new mongoose.Schema(
             type: Date,
         },
 
+        timeSpent: {
+            type: Number,
+            default: 0,
+        },
+
+        lastStartedAt: {
+            type: Date,
+            default: null,
+        },
+
         user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",

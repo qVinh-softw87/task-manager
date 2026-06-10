@@ -112,10 +112,15 @@ exports.createTask = async (req, res) => {
             });
         }
 
-        const task = await Task.create({
+        const status = normalizedData.status || "pending";
+        const taskData = {
             ...normalizedData,
             user: req.user._id,
-        });
+        };
+        if (status === "in-progress") {
+            taskData.lastStartedAt = new Date();
+        }
+        const task = await Task.create(taskData);
 
         return res.status(201).json({
             message: "Task created successfully",
@@ -261,7 +266,22 @@ exports.updateTask = async (req, res) => {
             });
         }
 
+        const oldStatus = task.status;
+        const newStatus = normalizedData.status;
+
         Object.assign(task, normalizedData);
+
+        if (newStatus !== undefined && newStatus !== oldStatus) {
+            if (newStatus === "in-progress") {
+                task.lastStartedAt = new Date();
+            } else if (oldStatus === "in-progress") {
+                if (task.lastStartedAt) {
+                    const elapsed = Math.floor((new Date() - new Date(task.lastStartedAt)) / 1000);
+                    task.timeSpent = (task.timeSpent || 0) + elapsed;
+                }
+                task.lastStartedAt = null;
+            }
+        }
 
         const updatedTask = await task.save();
 
