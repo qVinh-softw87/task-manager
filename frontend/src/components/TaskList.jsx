@@ -61,6 +61,8 @@ const dropAnimationConfig = {
 export default function TaskList({
   tasks,
   loading,
+  hasMore,
+  onLoadMore,
   onDeleteTask,
   onChangeStatus,
   onEditTask,
@@ -153,107 +155,126 @@ export default function TaskList({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div className="grid gap-5 md:grid-cols-3">
-        {TASK_STATUSES.map((status) => {
-          const filteredTasks = tasks.filter((task) => task.status === status);
-          const style = columnStyles[status] || columnStyles.pending;
+    <>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="grid gap-5 md:grid-cols-3 pb-8">
+          {TASK_STATUSES.map((status) => {
+            const filteredTasks = tasks.filter((task) => task.status === status);
+            const style = columnStyles[status] || columnStyles.pending;
 
-          return (
-            <DroppableColumn key={status} status={status} style={style} isDark={isDark}>
-              {/* Column Header */}
-              <div className={`mb-4 flex items-center justify-between border-b pb-3 ${style.headerBorder}`}>
-                <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${style.dot}`} />
-                  <h2 className={`text-sm font-bold tracking-tight uppercase ${style.text}`}>
-                    {status === "pending" ? t.pendingCol : status === "in-progress" ? t.inProgressCol : t.completedCol}
-                  </h2>
-                </div>
-
-                <span className={`rounded-lg border px-2.5 py-0.5 text-xs font-semibold ${style.counter}`}>
-                  {loading ? "..." : filteredTasks.length}
-                </span>
-              </div>
-
-              {/* Tasks list */}
-              {loading ? (
-                <motion.div
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-3 flex-1"
-                >
-                  <motion.div variants={itemVariants}>
-                    <TaskCardSkeleton theme={theme} />
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
-                    <TaskCardSkeleton theme={theme} />
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
-                    <TaskCardSkeleton theme={theme} />
-                  </motion.div>
-                </motion.div>
-              ) : filteredTasks.length === 0 ? (
-                <div className={`flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-10 text-center flex-1 ${style.emptyBg}`}>
-                  {status === "pending" && (
-                    <svg className="h-10 w-10 text-slate-400 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.4} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                    </svg>
-                  )}
-                  {status === "in-progress" && (
-                    <svg className="h-10 w-10 text-indigo-400 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.4} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                    </svg>
-                  )}
-                  {status === "completed" && (
-                    <svg className="h-10 w-10 text-emerald-400 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.4} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  )}
-                  <div>
-                    <p className={`text-sm font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                      {status === "pending" ? t.emptyPending : status === "in-progress" ? t.emptyInProgress : t.emptyCompleted}
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {status === "pending" ? t.emptyPendingHint : status === "in-progress" ? t.emptyInProgressHint : t.emptyCompletedHint}
-                    </p>
+            return (
+              <DroppableColumn key={status} status={status} style={style} isDark={isDark}>
+                {/* Column Header */}
+                <div className={`mb-4 flex items-center justify-between border-b pb-3 ${style.headerBorder}`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${style.dot}`} />
+                    <h2 className={`text-sm font-bold tracking-tight uppercase ${style.text}`}>
+                      {status === "pending" ? t.pendingCol : status === "in-progress" ? t.inProgressCol : t.completedCol}
+                    </h2>
                   </div>
+
+                  <span className={`rounded-lg border px-2.5 py-0.5 text-xs font-semibold ${style.counter}`}>
+                    {loading && tasks.length === 0 ? "..." : filteredTasks.length}
+                  </span>
                 </div>
-              ) : (
-                <div className="space-y-3 flex-1">
-                  <AnimatePresence mode="popLayout">
-                    {filteredTasks.map((task) => (
-                      <TaskCard
-                        key={task._uiKey || task._id}
-                        task={task}
-                        onDeleteTask={onDeleteTask}
-                        onChangeStatus={onChangeStatus}
-                        onEditTask={onEditTask}
-                        theme={theme}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </DroppableColumn>
-          );
-        })}
-      </div>
-      <DragOverlay dropAnimation={dropAnimationConfig} adjustScale={true}>
-        {activeId ? (
-          <TaskCard
-            task={tasks.find((t) => t._id === activeId)}
-            theme={theme}
-            isOverlayPreview={true}
-          />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+
+                {/* Tasks list */}
+                {loading && tasks.length === 0 ? (
+                  <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="space-y-3 flex-1"
+                  >
+                    <motion.div variants={itemVariants}>
+                      <TaskCardSkeleton theme={theme} />
+                    </motion.div>
+                    <motion.div variants={itemVariants}>
+                      <TaskCardSkeleton theme={theme} />
+                    </motion.div>
+                    <motion.div variants={itemVariants}>
+                      <TaskCardSkeleton theme={theme} />
+                    </motion.div>
+                  </motion.div>
+                ) : filteredTasks.length === 0 ? (
+                  <div className={`flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-10 text-center flex-1 ${style.emptyBg}`}>
+                    {status === "pending" && (
+                      <svg className="h-10 w-10 text-slate-400 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.4} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                    )}
+                    {status === "in-progress" && (
+                      <svg className="h-10 w-10 text-indigo-400 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.4} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                      </svg>
+                    )}
+                    {status === "completed" && (
+                      <svg className="h-10 w-10 text-emerald-400 opacity-60" fill="none" viewBox="0 0 24 24" strokeWidth={1.4} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
+                    <div>
+                      <p className={`text-sm font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                        {status === "pending" ? t.emptyPending : status === "in-progress" ? t.emptyInProgress : t.emptyCompleted}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {status === "pending" ? t.emptyPendingHint : status === "in-progress" ? t.emptyInProgressHint : t.emptyCompletedHint}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 flex-1">
+                    <AnimatePresence mode="popLayout">
+                      {filteredTasks.map((task) => (
+                        <TaskCard
+                          key={task._uiKey || task._id}
+                          task={task}
+                          onDeleteTask={onDeleteTask}
+                          onChangeStatus={onChangeStatus}
+                          onEditTask={onEditTask}
+                          theme={theme}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </DroppableColumn>
+            );
+          })}
+        </div>
+        <DragOverlay dropAnimation={dropAnimationConfig} adjustScale={true}>
+          {activeId ? (
+            <TaskCard
+              task={tasks.find((t) => t._id === activeId)}
+              theme={theme}
+              isOverlayPreview={true}
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Load More Button */}
+      {hasMore && (
+        <div className="flex justify-center mt-2 mb-12">
+            <button
+                onClick={onLoadMore}
+                disabled={loading}
+                className={`px-6 py-2 rounded-full font-semibold text-sm transition-all duration-200 cursor-pointer ${
+                  isDark
+                    ? "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                    : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-300 shadow-sm"
+                }`}
+            >
+                {loading ? t.loadingMore : t.loadMore}
+            </button>
+        </div>
+      )}
+    </>
   );
 }

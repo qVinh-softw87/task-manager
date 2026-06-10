@@ -10,6 +10,11 @@ export const setAccessToken = (token) => {
   accessToken = token;
 };
 
+const translations = {
+  "authExpired": "Session expired, please log in again.",
+  "authExpiredVi": "Phiên đã hết, vui lòng đăng nhập lại.",
+};
+
 const axiosClient = axios.create({
   baseURL: API_URL,
   withCredentials: true, // Required for sending/receiving cookies automatically
@@ -71,7 +76,14 @@ axiosClient.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error.response?.data || error);
+    // Provide user-friendly messages for common status codes
+  const status = error.response?.status;
+  if (status === 401) {
+    // Authentication error – user needs to re-login
+    return Promise.reject({ message: "Session expired, please log in again.", status });
+  }
+  // Fallback to original error payload
+  return Promise.reject(error.response?.data || error);
   }
 );
 

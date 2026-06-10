@@ -3,7 +3,7 @@ const Task = require("../models/Task");
 
 const ALLOWED_STATUS = ["pending", "in-progress", "completed"];
 const ALLOWED_PRIORITY = ["low", "medium", "high"];
-const ALLOWED_SORT = ["createdAt", "-createdAt", "dueDate", "-dueDate"];
+const ALLOWED_SORT = ["createdAt", "-createdAt", "dueDate", "-dueDate", "priority", "-priority", "timeSpent", "-timeSpent"];
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 const isValidStatus = (status) => ALLOWED_STATUS.includes(status);
@@ -54,6 +54,7 @@ const validateTaskQuery = (query) => {
         sortOption: sort || "-createdAt",
         pageNumber,
         limitNumber,
+        isTrash: query.isTrash === 'true',
     };
 };
 
@@ -151,11 +152,18 @@ exports.getTasks = async (req, res) => {
             sortOption,
             pageNumber,
             limitNumber,
+            isTrash,
         } = validatedQuery;
 
         const filter = {
             user: req.user._id,
         };
+
+        if (isTrash) {
+            filter.deletedAt = { $ne: null };
+        } else {
+            filter.deletedAt = null;
+        }
 
         // Filter by status
         if (status) {
@@ -318,14 +326,123 @@ exports.deleteTask = async (req, res) => {
             });
         }
 
-        await task.deleteOne();
+        task.deletedAt = new Date();
+        if (task.status === "in-progress" && task.lastStartedAt) {
+            const elapsed = Math.floor((new Date() - new Date(task.lastStartedAt)) / 1000);
+            task.timeSpent = (task.timeSpent || 0) + elapsed;
+            task.lastStartedAt = null;
+        }
+        await task.save();
 
         return res.status(200).json({
-            message: "Task deleted successfully",
+            message: "Task moved to trash successfully",
         });
     } catch (error) {
         return res.status(500).json({
             message: error.message,
         });
+    }
+};
+
+// Bulk delete tasks (soft delete)
+exports.bulkDeleteTasks = async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ message: "Task IDs are required" });
+        }
+
+        const validIds = ids.filter(isValidObjectId);
+        if (validIds.length === 0) {
+            return res.status(400).json({ message: "No valid Task IDs provided" });
+        }
+
+        await Task.updateMany({
+            _id: { $in: validIds },
+            user: req.user._id,
+        }, {
+            $set: { deletedAt: new Date() }
+        });
+
+        return res.status(200).json({ message: "Tasks moved to trash successfully" });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// Bulk update tasks
+exports.bulkUpdateTasks = async (req, res) => {
+    try {
+        const { ids, updateData } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ message: "Task IDs are required" });
+        }
+        
+        if (!updateData) {
+             return res.status(400).json({ message: "Update data is required" });
+        }
+
+        const validIds = ids.filter(isValidObjectId);
+        
+        await Task.updateMany(
+            { _id: { $in: validIds }, user: req.user._id },
+            { $set: updateData }
+        );
+
+        return res.status(200).json({ message: "Tasks updated successfully" });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// Restore a task
+exports.restoreTask = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid task id format" });
+        }
+
+        const task = await Task.findOne({ _id: id, user: req.user._id });
+
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        task.deletedAt = null;
+        await task.save();
+
+        return res.status(200).json({
+            message: "Task restored successfully",
+            data: task
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// Permanently delete a task
+exports.permanentDeleteTask = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid task id format" });
+        }
+
+        const task = await Task.findOne({ _id: id, user: req.user._id });
+
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        await task.deleteOne();
+
+        return res.status(200).json({
+            message: "Task permanently deleted successfully"
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
     }
 };

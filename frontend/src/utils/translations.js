@@ -71,6 +71,7 @@ export const translations = {
     // Toast notifications
     toastAddSuccess: "Đã thêm công việc thành công!",
     toastAddError: "Không thể thêm công việc. Thử lại.",
+    authExpired: "Phiên đã hết, vui lòng đăng nhập lại.",
     toastEditSuccess: "Đã lưu thay đổi.",
     toastEditError: "Không thể lưu thay đổi. Thử lại.",
     toastDeleteSuccess: "Đã xóa công việc.",
@@ -92,6 +93,20 @@ export const translations = {
     emptyInProgressHint: "Chuyển trạng thái task sang Đang thực hiện",
     emptyCompleted: "Chưa có việc nào hoàn thành",
     emptyCompletedHint: "Hoàn thành các task để chúng xuất hiện ở đây",
+    
+    // Pagination & Badges
+    loadMore: "Tải thêm",
+    loadingMore: "Đang tải...",
+    overdue: "Quá hạn",
+    dueSoon: "Sắp tới hạn",
+
+    // Trash
+    trash: "Thùng rác",
+    emptyTrash: "Thùng rác trống",
+    restore: "Khôi phục",
+    permanentDelete: "Xóa vĩnh viễn",
+    deletedAt: "Sẽ xóa vĩnh viễn sau",
+    days: "ngày",
   },
   en: {
     // General
@@ -165,6 +180,7 @@ export const translations = {
     // Toast notifications
     toastAddSuccess: "Task added successfully!",
     toastAddError: "Could not add task. Please try again.",
+    authExpired: "Session expired, please log in again.",
     toastEditSuccess: "Changes saved.",
     toastEditError: "Could not save changes. Please try again.",
     toastDeleteSuccess: "Task deleted.",
@@ -186,5 +202,19 @@ export const translations = {
     emptyInProgressHint: "Move a task here to start working",
     emptyCompleted: "No completed tasks yet",
     emptyCompletedHint: "Finish tasks to see them here",
+    
+    // Pagination & Badges
+    loadMore: "Load More",
+    loadingMore: "Loading...",
+    overdue: "Overdue",
+    dueSoon: "Due soon",
+
+    // Trash
+    trash: "Trash",
+    emptyTrash: "Trash is empty",
+    restore: "Restore",
+    permanentDelete: "Delete permanently",
+    deletedAt: "Will be permanently deleted in",
+    days: "days",
   }
 };

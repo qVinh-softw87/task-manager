@@ -1,11 +1,12 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import { Suspense, lazy } from "react";
 
 import ProtectedRoute from "./components/ProtectedRoute";
-import DashboardPage from "./pages/DashboardPage";
-import LoginPage from "./pages/LoginPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import RegisterPage from "./pages/RegisterPage";
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -30,7 +31,9 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AnimatedRoutes />
+      <Suspense fallback={<div className="skeleton-shimmer" style={{ height: "100vh" }}>Loading...</div>}>
+        <AnimatedRoutes />
+      </Suspense>
     </BrowserRouter>
   );
 }

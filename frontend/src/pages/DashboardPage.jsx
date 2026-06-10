@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import TaskForm from "../components/TaskForm";
 import TaskList from "../components/TaskList";
+import TrashList from "../components/TrashList";
 import { useAuth } from "../hooks/useAuth";
 import { useTasks } from "../hooks/useTasks";
 import { useThemeLang } from "../context/ThemeLangContext";
@@ -25,10 +26,8 @@ const SidebarIcon = ({ className }) => (
 
 export default function DashboardPage() {
   const { theme, toggleTheme, lang, toggleLang } = useThemeLang();
-  const [isPinned, setIsPinned] = useState(() => {
-    const saved = localStorage.getItem("sidebar_pinned");
-    return saved !== null ? JSON.parse(saved) : true;
-  });
+  const [isPinned, setIsPinned] = useState(true);
+  const [showTrash, setShowTrash] = useState(false);
   // isHovered: sidebar is floating open because user is hovering over toggle/sidebar
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef(null);
@@ -65,11 +64,16 @@ export default function DashboardPage() {
     tasks,
     loading,
     error,
+    page,
+    hasMore,
+    fetchNextPage,
     addTask,
     editTask,
     changeStatus,
     removeTask,
-  } = useTasks();
+    handleRestore,
+    handlePermanentDelete,
+  } = useTasks(showTrash);
 
   const t = translations[lang] || translations.vi;
 
@@ -166,23 +170,39 @@ export default function DashboardPage() {
 
         {/* Navigation */}
         <nav className="mt-4 space-y-1 px-3 text-sm">
-          <div className={`rounded-lg border px-3.5 py-2 font-semibold flex items-center gap-2.5 ${
-            isDark 
-              ? "bg-slate-800/40 border-slate-800/30 text-slate-200" 
-              : "bg-slate-100 border-slate-200/50 text-slate-800"
+          <div 
+            onClick={() => setShowTrash(false)}
+            className={`cursor-pointer rounded-lg px-3.5 py-2 font-semibold flex items-center gap-2.5 transition ${
+            !showTrash
+              ? (isDark 
+                ? "bg-slate-800/40 border border-slate-800/30 text-slate-200" 
+                : "bg-slate-100 border border-slate-200/50 text-slate-800")
+              : (isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100 border border-transparent" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent")
           }`}>
-            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+            {!showTrash && <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />}
             {t.allTasks}
           </div>
           <div className={`cursor-pointer rounded-lg px-3.5 py-2 transition ${
-            isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+            isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100 border border-transparent" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent"
           }`}>
             {t.overview}
           </div>
           <div className={`cursor-pointer rounded-lg px-3.5 py-2 transition ${
-            isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+            isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100 border border-transparent" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent"
           }`}>
             {t.analytics}
+          </div>
+          <div 
+            onClick={() => setShowTrash(true)}
+            className={`cursor-pointer rounded-lg px-3.5 py-2 font-semibold flex items-center gap-2.5 transition ${
+            showTrash
+              ? (isDark 
+                ? "bg-rose-500/10 border border-rose-500/20 text-rose-400" 
+                : "bg-rose-50 border border-rose-200/50 text-rose-600")
+              : (isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-rose-400 border border-transparent" : "text-slate-500 hover:bg-slate-50 hover:text-rose-600 border border-transparent")
+          }`}>
+            {showTrash && <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />}
+            {t.trash || "Thùng rác"}
           </div>
         </nav>
 
@@ -303,10 +323,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Input Form */}
-        <div className="mb-6">
-          <TaskForm onAddTask={handleAddTask} theme={theme} />
-        </div>
+        {/* Input Form - only show if not in Trash */}
+        {!showTrash && (
+          <div className="mb-6">
+            <TaskForm onAddTask={handleAddTask} theme={theme} />
+          </div>
+        )}
 
         {/* Stats Panels */}
         <div className="mb-6 grid gap-4 grid-cols-2 md:grid-cols-4">
@@ -352,16 +374,30 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Tasks columns list */}
-        <TaskList
-          tasks={tasks}
-          loading={loading}
-          error={error}
-          onEditTask={editTask}
-          onChangeStatus={changeStatus}
-          onDeleteTask={removeTask}
-          theme={theme}
-        />
+        {/* Tasks View */}
+        {showTrash ? (
+          <TrashList
+            tasks={tasks}
+            loading={loading}
+            hasMore={hasMore}
+            onLoadMore={fetchNextPage}
+            onRestore={handleRestore}
+            onPermanentDelete={handlePermanentDelete}
+            theme={theme}
+          />
+        ) : (
+          <TaskList
+            tasks={tasks}
+            loading={loading}
+            error={error}
+            hasMore={hasMore}
+            onLoadMore={fetchNextPage}
+            onEditTask={editTask}
+            onChangeStatus={changeStatus}
+            onDeleteTask={removeTask}
+            theme={theme}
+          />
+        )}
       </main>
     </motion.div>
   );

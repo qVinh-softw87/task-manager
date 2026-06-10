@@ -46,6 +46,12 @@ const taskSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
+
+        deletedAt: {
+            type: Date,
+            default: null,
+            index: { expires: 691200 } // Auto delete after 8 days (691200 seconds) when deletedAt is set
+        },
     },
 
     {

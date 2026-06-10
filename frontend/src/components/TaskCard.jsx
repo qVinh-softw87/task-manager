@@ -190,6 +190,22 @@ export default function TaskCard({
     return new Date(dateString) < today;
   };
 
+  const getDeadlineBadge = (dateString) => {
+    if (!dateString || task.status === "completed") return null;
+    const now = new Date();
+    const dueDate = new Date(dateString);
+    
+    const diffTime = dueDate.getTime() - now.getTime();
+    const diffHours = diffTime / (1000 * 60 * 60);
+
+    if (diffHours < 0) {
+        return { text: t.overdue, color: "bg-rose-500/10 text-rose-500 border-rose-500/20" };
+    } else if (diffHours <= 12) { 
+        return { text: t.dueSoon, color: "bg-amber-500/10 text-amber-500 border-amber-500/20" };
+    }
+    return null;
+  };
+
   const handleSave = () => {
     const trimmedTitle = editTitle.trim();
     if (!trimmedTitle) return;
@@ -322,21 +338,35 @@ export default function TaskCard({
       ) : (
         <>
           <div>
-            {/* Header badges */}
-            <div className="flex items-center justify-between gap-2">
-              <span
-                className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${
-                  task.priority === "high"
-                    ? "bg-rose-500/15 text-rose-400 border-rose-500/20"
-                    : task.priority === "medium"
-                    ? "bg-amber-500/15 text-amber-400 border-amber-500/20"
-                    : isDark
-                    ? "bg-slate-800/60 text-slate-400 border-slate-700/30"
-                    : "bg-slate-100 text-slate-500 border-slate-200/50"
-                }`}
-              >
-                {task.priority === "high" ? t.high : task.priority === "medium" ? t.medium : t.low}
-              </span>
+            {/* Header badges and Checkbox */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${
+                      task.priority === "high"
+                        ? "bg-rose-500/15 text-rose-400 border-rose-500/20"
+                        : task.priority === "medium"
+                        ? "bg-amber-500/15 text-amber-400 border-amber-500/20"
+                        : isDark
+                        ? "bg-slate-800/60 text-slate-400 border-slate-700/30"
+                        : "bg-slate-100 text-slate-500 border-slate-200/50"
+                    }`}
+                  >
+                    {task.priority === "high" ? t.high : task.priority === "medium" ? t.medium : t.low}
+                  </span>
+
+                  {(() => {
+                      const badge = getDeadlineBadge(task.dueDate);
+                      if (badge) {
+                          return (
+                              <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${badge.color}`}>
+                                  {badge.text}
+                              </span>
+                          );
+                      }
+                      return null;
+                  })()}
+              </div>
 
               {task.dueDate && (
                 <span

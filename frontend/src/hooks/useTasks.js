@@ -4,29 +4,64 @@ import {
     createTask,
     updateTask,
     deleteTask,
+    bulkDeleteTasks,
+    bulkUpdateTasks,
+    restoreTask,
+    permanentDeleteTask
 } from "../api/taskApi";
 import { useToast } from "../context/ToastContext";
 import { useThemeLang } from "../context/ThemeLangContext";
 import { translations } from "../utils/translations";
 
-export function useTasks() {
+export function useTasks(isTrash = false) {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    
+    // Pagination & Sorting state
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [sortOption, setSortOption] = useState("-createdAt");
+
     const toast = useToast();
     const { lang } = useThemeLang();
     const t = translations[lang] || translations.vi;
 
-    async function loadTasks() {
+    async function loadTasks(reset = false, currentPage = page) {
+        if (reset) {
+            setLoading(true);
+        }
         try {
-            const result = await getTasks();
-            setTasks(result.data || result);
+            const params = { page: currentPage, limit: 20, isTrash };
+            const result = await getTasks(params);
+            const fetchedTasks = result.data || result;
+            
+            if (reset) {
+                setTasks(fetchedTasks);
+            } else {
+                setTasks(prev => [...prev, ...fetchedTasks]);
+            }
+
+            if (result.pagination) {
+                setHasMore(result.pagination.page < result.pagination.totalPages);
+            } else {
+                setHasMore(false);
+            }
             setError("");
         } catch (err) {
-            setError(err.message);
-            toast.error(t.toastLoadError);
+            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastLoadError);
+            setError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
+        }
+    }
+
+    function fetchNextPage() {
+        if (hasMore && !loading) {
+            const nextPage = page + 1;
+            setPage(nextPage);
+            loadTasks(false, nextPage);
         }
     }
 
@@ -59,8 +94,9 @@ export function useTasks() {
             setError("");
         } catch (err) {
             setTasks(prev => prev.filter(t => t._id !== tempId));
-            setError(err.message);
-            toast.error(t.toastAddError);
+            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastAddError);
+            setError(msg);
+            toast.error(msg);
         }
     }
 
@@ -78,20 +114,17 @@ export function useTasks() {
             }
             setError("");
         } catch (err) {
-            setError(err.message);
-            toast.error(t.toastEditError);
+            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastEditError);
+            setError(msg);
+            toast.error(msg);
         }
     }
 
     async function changeStatus(id, newStatus, isDragOver = false, revertStatus = null) {
-        // Simple optimistic update — only change status locally
-        // Do NOT set lastStartedAt here; let TaskCard track local start time
-        // to avoid timer reset when real server data arrives
         setTasks(prev => prev.map(task =>
             task._id === id ? { ...task, status: newStatus } : task
         ));
 
-        // If this is just a drag-over preview update, skip the API call and toast notification
         if (isDragOver) return;
 
         toast.info(t.toastStatusChanged);
@@ -103,21 +136,19 @@ export function useTasks() {
             }
             setError("");
         } catch (err) {
-            // Revert to initial status if call fails
             if (revertStatus) {
                 setTasks(prev => prev.map(task =>
                     task._id === id ? { ...task, status: revertStatus } : task
                 ));
             }
-            setError(err.message);
-            toast.error(t.toastStatusError);
+            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastStatusError);
+            setError(msg);
+            toast.error(msg);
         }
     }
 
     async function removeTask(id) {
         const previousTasks = [...tasks];
-
-        // Optimistically remove from UI immediately
         setTasks(prev => prev.filter(task => task._id !== id));
         toast.success(t.toastDeleteSuccess);
 
@@ -125,29 +156,97 @@ export function useTasks() {
             await deleteTask(id);
             setError("");
         } catch (err) {
-            // Revert state if backend request fails
             setTasks(previousTasks);
-            setError(err.message);
-            toast.error(t.toastDeleteError);
+            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastDeleteError);
+            setError(msg);
+            toast.error(msg);
+        }
+    }
+
+    async function bulkRemove(ids) {
+        const previousTasks = [...tasks];
+        setTasks(prev => prev.filter(task => !ids.includes(task._id)));
+        toast.success(t.toastDeleteSuccess);
+
+        try {
+            await bulkDeleteTasks(ids);
+            setError("");
+        } catch (err) {
+            setTasks(previousTasks);
+            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastDeleteError);
+            setError(msg);
+            toast.error(msg);
+        }
+    }
+
+    async function bulkChangeStatus(ids, newStatus) {
+        const previousTasks = [...tasks];
+        setTasks(prev => prev.map(task => ids.includes(task._id) ? { ...task, status: newStatus } : task));
+        toast.info(t.toastStatusChanged);
+
+        try {
+            await bulkUpdateTasks(ids, { status: newStatus });
+            setError("");
+        } catch (err) {
+            setTasks(previousTasks);
+            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastStatusError);
+            setError(msg);
+            toast.error(msg);
+        }
+    }
+
+    async function handleRestore(id) {
+        const previousTasks = [...tasks];
+        setTasks(prev => prev.filter(task => task._id !== id));
+        toast.success("Khôi phục thành công (Restored)!");
+
+        try {
+            await restoreTask(id);
+            setError("");
+        } catch (err) {
+            setTasks(previousTasks);
+            const msg = (err.status === 401) ? t.authExpired : (err.message || "Could not restore task.");
+            setError(msg);
+            toast.error(msg);
+        }
+    }
+
+    async function handlePermanentDelete(id) {
+        const previousTasks = [...tasks];
+        setTasks(prev => prev.filter(task => task._id !== id));
+        toast.success("Đã xóa vĩnh viễn (Permanently deleted)!");
+
+        try {
+            await permanentDeleteTask(id);
+            setError("");
+        } catch (err) {
+            setTasks(previousTasks);
+            const msg = (err.status === 401) ? t.authExpired : (err.message || "Could not permanently delete task.");
+            setError(msg);
+            toast.error(msg);
         }
     }
 
     useEffect(() => {
-        const timerId = setTimeout(() => {
-            loadTasks();
-        }, 0);
-
-        return () => clearTimeout(timerId);
-    }, []);
+        setTasks([]); // Clear immediately on toggle
+        setPage(1);
+        loadTasks(true, 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isTrash]);
 
     return {
         tasks,
         loading,
         error,
+        page,
+        hasMore,
+        fetchNextPage,
         addTask,
         editTask,
         changeStatus,
         removeTask,
+        handleRestore,
+        handlePermanentDelete
     };
 }
 
