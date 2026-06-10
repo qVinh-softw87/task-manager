@@ -183,16 +183,8 @@ export default function DashboardPage() {
             {!showTrash && <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />}
             {t.allTasks}
           </div>
-          <Link to="/" className={`block rounded-lg px-3.5 py-2 transition ${
-            isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100 border border-transparent" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent"
-          }`}>
-            {t.overview}
-          </Link>
-          <Link to="/analytics" className={`block rounded-lg px-3.5 py-2 transition ${
-            isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100 border border-transparent" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent"
-          }`}>
-            {t.analytics}
-          </Link>
+
+
           <div 
             onClick={() => setShowTrash(true)}
             className={`cursor-pointer rounded-lg px-3.5 py-2 font-semibold flex items-center gap-2.5 transition ${

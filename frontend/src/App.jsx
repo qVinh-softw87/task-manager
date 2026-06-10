@@ -4,7 +4,7 @@ import { Suspense, lazy } from "react";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
-const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
+
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
@@ -21,7 +21,7 @@ function AnimatedRoutes() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
+
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

@@ -101,7 +101,7 @@ export default function AnalyticsPage() {
     { name: t.completedCol, value: data.completed, color: COLORS.completed },
   ].filter(item => item.value > 0) : [];
 
-  const barData = data?.weeklyData?.slice().reverse() || [];
+  const barData = data?.weeklyData?.slice()?.reverse() || [];
 
   return (
     <motion.div
@@ -334,8 +334,40 @@ export default function AnalyticsPage() {
               {t.taskStatusDistribution}
             </h3>
             {loading ? <ChartSkeleton isDark={isDark} /> : (
-              <div className="h-72 w-full flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-slate-500">
-                [Pie Chart Placeholder]
+              <div className="h-72 w-full">
+                {pieData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={90}
+                        paddingAngle={5}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip 
+                        contentStyle={{ 
+                          backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                          borderColor: isDark ? '#334155' : '#e2e8f0',
+                          color: isDark ? '#f8fafc' : '#0f172a',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Legend verticalAlign="bottom" height={36} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className={`h-full flex items-center justify-center ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                    {t.noData}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -348,8 +380,46 @@ export default function AnalyticsPage() {
               {t.tasksCompletedLast7Days}
             </h3>
             {loading ? <ChartSkeleton isDark={isDark} /> : (
-              <div className="h-72 w-full flex items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-slate-500">
-                [Bar Chart Placeholder]
+              <div className="h-72 w-full">
+                {barData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#334155" : "#e2e8f0"} />
+                      <XAxis 
+                        dataKey="_id" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }}
+                        dy={10}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }}
+                        allowDecimals={false}
+                      />
+                      <RechartsTooltip 
+                        cursor={{ fill: isDark ? '#334155' : '#f1f5f9' }}
+                        contentStyle={{ 
+                          backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                          borderColor: isDark ? '#334155' : '#e2e8f0',
+                          color: isDark ? '#f8fafc' : '#0f172a',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="count" 
+                        fill={isDark ? "#818cf8" : "#6366f1"} 
+                        radius={[4, 4, 0, 0]} 
+                        barSize={32}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className={`h-full flex items-center justify-center ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                    {t.noData}
+                  </div>
+                )}
               </div>
             )}
           </div>

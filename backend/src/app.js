@@ -48,10 +48,7 @@ app.get("/api-docs.json", (req, res) => {
     res.send(swaggerSpec);
 });
 
-const { apiLimiter } = require("./middleware/rateLimitMiddleware");
 
-// Apply general rate limiter to all api routes
-// app.use("/api", apiLimiter);
 
 // Register middleware: Route all request starting with /api/auth to authRoutes to handler
 app.use("/api/auth", authRoutes);
