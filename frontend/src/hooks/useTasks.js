@@ -12,6 +12,7 @@ import {
 import { useToast } from "../context/ToastContext";
 import { useThemeLang } from "../context/ThemeLangContext";
 import { translations } from "../utils/translations";
+import { getErrorMessage } from "../utils/errorHandler";
 
 export function useTasks(isTrash = false) {
     const [tasks, setTasks] = useState([]);
@@ -49,7 +50,7 @@ export function useTasks(isTrash = false) {
             }
             setError("");
         } catch (err) {
-            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastLoadError);
+            const msg = getErrorMessage(err, t);
             setError(msg);
             toast.error(msg);
         } finally {
@@ -94,7 +95,7 @@ export function useTasks(isTrash = false) {
             setError("");
         } catch (err) {
             setTasks(prev => prev.filter(t => t._id !== tempId));
-            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastAddError);
+            const msg = getErrorMessage(err, t, t.toastAddError);
             setError(msg);
             toast.error(msg);
         }
@@ -114,7 +115,7 @@ export function useTasks(isTrash = false) {
             }
             setError("");
         } catch (err) {
-            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastEditError);
+            const msg = getErrorMessage(err, t, t.toastEditError);
             setError(msg);
             toast.error(msg);
         }
@@ -141,7 +142,7 @@ export function useTasks(isTrash = false) {
                     task._id === id ? { ...task, status: revertStatus } : task
                 ));
             }
-            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastStatusError);
+            const msg = getErrorMessage(err, t, t.toastStatusError);
             setError(msg);
             toast.error(msg);
         }
@@ -157,7 +158,7 @@ export function useTasks(isTrash = false) {
             setError("");
         } catch (err) {
             setTasks(previousTasks);
-            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastDeleteError);
+            const msg = getErrorMessage(err, t, t.toastDeleteError);
             setError(msg);
             toast.error(msg);
         }
@@ -173,7 +174,7 @@ export function useTasks(isTrash = false) {
             setError("");
         } catch (err) {
             setTasks(previousTasks);
-            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastDeleteError);
+            const msg = getErrorMessage(err, t, t.toastDeleteError);
             setError(msg);
             toast.error(msg);
         }
@@ -189,7 +190,7 @@ export function useTasks(isTrash = false) {
             setError("");
         } catch (err) {
             setTasks(previousTasks);
-            const msg = (err.status === 401) ? t.authExpired : (err.message || t.toastStatusError);
+            const msg = getErrorMessage(err, t, t.toastStatusError);
             setError(msg);
             toast.error(msg);
         }
@@ -198,14 +199,14 @@ export function useTasks(isTrash = false) {
     async function handleRestore(id) {
         const previousTasks = [...tasks];
         setTasks(prev => prev.filter(task => task._id !== id));
-        toast.success("Khôi phục thành công (Restored)!");
+        toast.success(t.toastRestoreSuccess);
 
         try {
             await restoreTask(id);
             setError("");
         } catch (err) {
             setTasks(previousTasks);
-            const msg = (err.status === 401) ? t.authExpired : (err.message || "Could not restore task.");
+            const msg = getErrorMessage(err, t, t.toastRestoreError);
             setError(msg);
             toast.error(msg);
         }
@@ -214,25 +215,29 @@ export function useTasks(isTrash = false) {
     async function handlePermanentDelete(id) {
         const previousTasks = [...tasks];
         setTasks(prev => prev.filter(task => task._id !== id));
-        toast.success("Đã xóa vĩnh viễn (Permanently deleted)!");
+        toast.success(t.toastPermanentDeleteSuccess);
 
         try {
             await permanentDeleteTask(id);
             setError("");
         } catch (err) {
             setTasks(previousTasks);
-            const msg = (err.status === 401) ? t.authExpired : (err.message || "Could not permanently delete task.");
+            const msg = getErrorMessage(err, t, t.toastPermanentDeleteError);
             setError(msg);
             toast.error(msg);
         }
     }
 
     useEffect(() => {
-        setTasks([]); // Clear immediately on toggle
         setPage(1);
         loadTasks(true, 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isTrash]);
+
+    function refreshTasks() {
+        setPage(1);
+        loadTasks(true, 1);
+    }
 
     return {
         tasks,
@@ -246,7 +251,8 @@ export function useTasks(isTrash = false) {
         changeStatus,
         removeTask,
         handleRestore,
-        handlePermanentDelete
+        handlePermanentDelete,
+        refreshTasks
     };
 }
 

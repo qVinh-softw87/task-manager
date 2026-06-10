@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import TaskForm from "../components/TaskForm";
 import TaskList from "../components/TaskList";
 import TrashList from "../components/TrashList";
@@ -60,34 +61,34 @@ export default function DashboardPage() {
   };
 
   const { user, logoutUser } = useAuth();
-  const {
-    tasks,
-    loading,
-    error,
-    page,
-    hasMore,
-    fetchNextPage,
-    addTask,
-    editTask,
-    changeStatus,
-    removeTask,
-    handleRestore,
-    handlePermanentDelete,
-  } = useTasks(showTrash);
+  const dashboard = useTasks(false);
+  const trash = useTasks(true);
+
+  // Sync actions between dashboard and trash
+  const handleRemoveTask = async (id) => {
+    await dashboard.removeTask(id);
+    trash.refreshTasks(); // Refresh trash in background so it appears instantly when switching
+  };
+
+  const handleRestoreTask = async (id) => {
+    await trash.handleRestore(id);
+    dashboard.refreshTasks();
+  };
 
   const t = translations[lang] || translations.vi;
 
   const displayName = user?.name || user?.email?.split("@")[0] || "User";
   const initials = displayName.slice(0, 2).toUpperCase();
   
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((task) => task.status === "completed").length;
-  const inProgressTasks = tasks.filter((task) => task.status === "in-progress").length;
+  // Metrics always reflect Dashboard tasks
+  const totalTasks = dashboard.tasks.length;
+  const completedTasks = dashboard.tasks.filter((task) => task.status === "completed").length;
+  const inProgressTasks = dashboard.tasks.filter((task) => task.status === "in-progress").length;
   
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   async function handleAddTask(taskData) {
-    await addTask(taskData);
+    await dashboard.addTask(taskData);
   }
 
   // Sidebar is visible when pinned OR when user hovers toggle/sidebar while unpinned
@@ -182,16 +183,16 @@ export default function DashboardPage() {
             {!showTrash && <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />}
             {t.allTasks}
           </div>
-          <div className={`cursor-pointer rounded-lg px-3.5 py-2 transition ${
+          <Link to="/" className={`block rounded-lg px-3.5 py-2 transition ${
             isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100 border border-transparent" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent"
           }`}>
             {t.overview}
-          </div>
-          <div className={`cursor-pointer rounded-lg px-3.5 py-2 transition ${
+          </Link>
+          <Link to="/analytics" className={`block rounded-lg px-3.5 py-2 transition ${
             isDark ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100 border border-transparent" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent"
           }`}>
             {t.analytics}
-          </div>
+          </Link>
           <div 
             onClick={() => setShowTrash(true)}
             className={`cursor-pointer rounded-lg px-3.5 py-2 font-semibold flex items-center gap-2.5 transition ${
@@ -377,24 +378,24 @@ export default function DashboardPage() {
         {/* Tasks View */}
         {showTrash ? (
           <TrashList
-            tasks={tasks}
-            loading={loading}
-            hasMore={hasMore}
-            onLoadMore={fetchNextPage}
-            onRestore={handleRestore}
-            onPermanentDelete={handlePermanentDelete}
+            tasks={trash.tasks}
+            loading={trash.loading}
+            hasMore={trash.hasMore}
+            onLoadMore={trash.fetchNextPage}
+            onRestore={handleRestoreTask}
+            onPermanentDelete={trash.handlePermanentDelete}
             theme={theme}
           />
         ) : (
           <TaskList
-            tasks={tasks}
-            loading={loading}
-            error={error}
-            hasMore={hasMore}
-            onLoadMore={fetchNextPage}
-            onEditTask={editTask}
-            onChangeStatus={changeStatus}
-            onDeleteTask={removeTask}
+            tasks={dashboard.tasks}
+            loading={dashboard.loading}
+            error={dashboard.error}
+            hasMore={dashboard.hasMore}
+            onLoadMore={dashboard.fetchNextPage}
+            onEditTask={dashboard.editTask}
+            onChangeStatus={dashboard.changeStatus}
+            onDeleteTask={handleRemoveTask}
             theme={theme}
           />
         )}

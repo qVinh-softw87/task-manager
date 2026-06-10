@@ -49,6 +49,13 @@ export const translations = {
     completed: "Đã hoàn thành",
     completionRate: "Tỷ lệ hoàn thành",
     
+    // Analytics
+    analyticsTitle: "Phân tích & Báo cáo",
+    taskStatusDistribution: "Phân bổ Trạng thái",
+    tasksCompletedLast7Days: "Công việc hoàn thành (7 ngày qua)",
+    totalTimeSpent: "Tổng thời gian làm việc",
+    hours: "giờ",
+    
     // Tasks list
     pendingCol: "CHỜ XỬ LÝ",
     inProgressCol: "ĐANG THỰC HIỆN",
@@ -79,6 +86,18 @@ export const translations = {
     toastStatusError: "Không thể đổi trạng thái. Thử lại.",
     toastStatusChanged: "Đã cập nhật trạng thái.",
     toastLoadError: "Không thể tải danh sách công việc.",
+    toastRestoreSuccess: "Đã khôi phục công việc",
+    toastRestoreError: "Lỗi khi khôi phục công việc",
+    toastPermDeleteSuccess: "Đã xóa vĩnh viễn công việc",
+    toastPermDeleteError: "Lỗi khi xóa vĩnh viễn",
+    
+    // API Errors
+    networkError: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng.",
+    forbidden: "Bạn không có quyền thực hiện thao tác này.",
+    notFound: "Không tìm thấy dữ liệu.",
+    tooManyRequests: "Thao tác quá nhiều lần. Vui lòng thử lại sau.",
+    serverError: "Lỗi máy chủ nội bộ. Vui lòng thử lại sau.",
+    defaultError: "Đã xảy ra lỗi không xác định. Vui lòng thử lại.",
 
     // Confirm delete dialog
     confirmDeleteTitle: "Xóa công việc?",
@@ -158,6 +177,13 @@ export const translations = {
     completed: "Completed",
     completionRate: "Completion Rate",
     
+    // Analytics
+    analyticsTitle: "Analytics & Reporting",
+    taskStatusDistribution: "Task Status Distribution",
+    tasksCompletedLast7Days: "Tasks Completed (Last 7 Days)",
+    totalTimeSpent: "Total Time Spent",
+    hours: "hours",
+    
     // Tasks list
     pendingCol: "PENDING",
     inProgressCol: "IN PROGRESS",
@@ -188,6 +214,18 @@ export const translations = {
     toastStatusError: "Could not update status. Please try again.",
     toastStatusChanged: "Status updated.",
     toastLoadError: "Could not load tasks.",
+    toastRestoreSuccess: "Task restored successfully",
+    toastRestoreError: "Failed to restore task",
+    toastPermDeleteSuccess: "Task permanently deleted",
+    toastPermDeleteError: "Failed to permanently delete task",
+    
+    // API Errors
+    networkError: "Could not connect to the server. Please check your network.",
+    forbidden: "You don't have permission to perform this action.",
+    notFound: "Data not found.",
+    tooManyRequests: "Too many requests. Please try again later.",
+    serverError: "Internal server error. Please try again later.",
+    defaultError: "An unknown error occurred. Please try again.",
 
     // Confirm delete dialog
     confirmDeleteTitle: "Delete task?",

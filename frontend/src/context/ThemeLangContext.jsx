@@ -8,7 +8,7 @@ export function ThemeLangProvider({ children }) {
   });
   
   const [lang, setLang] = useState(() => {
-    return localStorage.getItem("lang") || "vi";
+    return localStorage.getItem("lang") || "en";
   });
 
   const toggleTheme = () => {

@@ -31,3 +31,7 @@ export async function restoreTask(id) {
 export async function permanentDeleteTask(id) {
   return axiosClient.delete(`/api/tasks/${id}/permanent`);
 }
+
+export async function getAnalytics() {
+  return axiosClient.get("/api/tasks/analytics");
+}

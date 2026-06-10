@@ -11,6 +11,7 @@ const {
     bulkUpdateTasks,
     restoreTask,
     permanentDeleteTask,
+    getTaskAnalytics,
 } = require("../controllers/taskController");
 
 const { protect } = require("../middleware/authMiddleware");
@@ -33,6 +34,9 @@ router.post("/bulk-delete", bulkDeleteTasks);
 
 // bulk update tasks
 router.post("/bulk-update", bulkUpdateTasks);
+
+// get task analytics
+router.get("/analytics", getTaskAnalytics);
 
 // get task by id
 router.get("/:id", getTaskById);

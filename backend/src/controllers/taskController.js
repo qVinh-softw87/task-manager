@@ -446,3 +446,63 @@ exports.permanentDeleteTask = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
+// Get analytics
+exports.getTaskAnalytics = async (req, res) => {
+    try {
+        // Find tasks that are not soft-deleted
+        const tasks = await Task.find({ user: req.user._id, deletedAt: null });
+
+        const totalTasks = tasks.length;
+        let pending = 0;
+        let inProgress = 0;
+        let completed = 0;
+        let totalTimeSpent = 0;
+
+        // Last 7 days data grouping
+        const last7DaysTasks = [];
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            last7DaysTasks.push({
+                date: d.toISOString().split('T')[0], // YYYY-MM-DD
+                count: 0
+            });
+        }
+
+        tasks.forEach(task => {
+            if (task.status === 'pending') pending++;
+            else if (task.status === 'in-progress') inProgress++;
+            else if (task.status === 'completed') {
+                completed++;
+                // If it's completed, we use updatedAt to approximate completion date
+                const updatedDateStr = task.updatedAt.toISOString().split('T')[0];
+                const dayMatch = last7DaysTasks.find(d => d.date === updatedDateStr);
+                if (dayMatch) {
+                    dayMatch.count++;
+                }
+            }
+            totalTimeSpent += (task.timeSpent || 0);
+        });
+
+        const completionRate = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+
+        return res.status(200).json({
+            message: "Analytics fetched successfully",
+            data: {
+                totalTasks,
+                pending,
+                inProgress,
+                completed,
+                completionRate,
+                totalTimeSpent,
+                weeklyData: last7DaysTasks
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};

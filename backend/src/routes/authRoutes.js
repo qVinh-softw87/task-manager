@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middleware/authMiddleware.js");
-const { authLimiter } = require("../middleware/rateLimitMiddleware.js");
 const {
     registerValidation,
     loginValidation,
@@ -18,13 +17,13 @@ const {
     logout,
 } = require("../controllers/authController.js");
 
-router.post("/register", authLimiter, registerValidation, register);
-router.post("/login", authLimiter, loginValidation, login);
+router.post("/register", registerValidation, register);
+router.post("/login", loginValidation, login);
 router.post("/refresh", refresh);
 router.post("/logout", logout);
 
 router.get("/me", protect, getMe);
 router.patch("/profile", protect, updateProfileValidation, updateProfile);
-router.put("/change-password", protect, authLimiter, changePasswordValidation, changePassword);
+router.put("/change-password", protect, changePasswordValidation, changePassword);
 
 module.exports = router;
