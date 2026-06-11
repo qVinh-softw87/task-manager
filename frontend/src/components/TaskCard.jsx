@@ -38,11 +38,10 @@ function StatusDropdown({ status, onChangeStatus, theme }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-indigo-500 cursor-pointer transition-colors duration-150 ${
-          isDark 
-            ? "border-slate-800 bg-slate-950/60 text-slate-300 hover:bg-slate-900/50" 
+        className={`w-full flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-indigo-500 cursor-pointer transition-colors duration-150 ${isDark
+            ? "border-slate-800 bg-slate-950/60 text-slate-300 hover:bg-slate-900/50"
             : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
-        }`}
+          }`}
       >
         <span>{getStatusLabel(status)}</span>
         <svg
@@ -59,11 +58,10 @@ function StatusDropdown({ status, onChangeStatus, theme }) {
 
       {isOpen && (
         <div
-          className={`absolute bottom-full left-0 mb-1 z-50 w-full min-w-[120px] rounded-lg border shadow-xl backdrop-blur-md py-1 transition-all duration-150 ${
-            isDark
+          className={`absolute bottom-full left-0 mb-1 z-50 w-full min-w-[120px] rounded-lg border shadow-xl backdrop-blur-md py-1 transition-all duration-150 ${isDark
               ? "border-slate-800 bg-[#0c101b]/95 text-slate-300"
               : "border-slate-200 bg-white/95 text-slate-700 shadow-slate-100"
-          }`}
+            }`}
         >
           {TASK_STATUSES.map((s) => (
             <button
@@ -73,15 +71,14 @@ function StatusDropdown({ status, onChangeStatus, theme }) {
                 onChangeStatus(s);
                 setIsOpen(false);
               }}
-              className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer ${
-                status === s
+              className={`w-full text-left px-3 py-1.5 text-xs transition-colors cursor-pointer ${status === s
                   ? isDark
                     ? "bg-gradient-to-r from-indigo-500/15 to-purple-500/15 text-indigo-400 border-l-2 border-indigo-500 font-bold"
                     : "bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-600 border-l-2 border-indigo-500 font-bold"
                   : isDark
-                  ? "hover:bg-slate-800/60 text-slate-300 border-l-2 border-transparent"
-                  : "hover:bg-slate-100/60 text-slate-700 border-l-2 border-transparent"
-              }`}
+                    ? "hover:bg-slate-800/60 text-slate-300 border-l-2 border-transparent"
+                    : "hover:bg-slate-100/60 text-slate-700 border-l-2 border-transparent"
+                }`}
             >
               {getStatusLabel(s)}
             </button>
@@ -114,64 +111,7 @@ export default function TaskCard({
   });
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Local start ref: tracks when THIS session of in-progress began (client-side)
-  // This allows the timer to start immediately on status change without waiting
-  // for server's lastStartedAt to arrive
-  const localStartRef = useRef(null);
-  const [liveTimeSpent, setLiveTimeSpent] = useState(() => {
-    if (task.status === "in-progress" && task.lastStartedAt) {
-      localStartRef.current = new Date(task.lastStartedAt).getTime();
-      return (task.timeSpent || 0) + Math.max(0, Math.round((Date.now() - localStartRef.current) / 1000));
-    }
-    return task.timeSpent || 0;
-  });
 
-  // Sync local start time when the task transitions TO in-progress
-  // (either from optimistic update or server response)
-  const prevStatusRef = useRef(task.status);
-  useEffect(() => {
-    const prevStatus = prevStatusRef.current;
-    prevStatusRef.current = task.status;
-
-    if (task.status === "in-progress") {
-      // Only set local start when first entering in-progress
-      if (prevStatus !== "in-progress" || localStartRef.current === null) {
-        // Prefer server's lastStartedAt if available, else use now
-        localStartRef.current = task.lastStartedAt
-          ? new Date(task.lastStartedAt).getTime()
-          : Date.now();
-      }
-      // If server just responded with real lastStartedAt, recalibrate
-      if (task.lastStartedAt) {
-        const serverStart = new Date(task.lastStartedAt).getTime();
-        // Only recalibrate if server start is within 10s of local start (same session)
-        if (localStartRef.current && Math.abs(serverStart - localStartRef.current) < 10000) {
-          localStartRef.current = serverStart;
-        }
-      }
-    } else {
-      // Not in-progress — reset local start
-      localStartRef.current = null;
-      setLiveTimeSpent(task.timeSpent || 0);
-    }
-  }, [task.status, task.lastStartedAt, task.timeSpent]);
-
-  // Tick every second while in-progress
-  useEffect(() => {
-    if (task.status !== "in-progress") return;
-
-    const tick = () => {
-      if (localStartRef.current === null) {
-        localStartRef.current = Date.now();
-      }
-      const elapsed = Math.round((Date.now() - localStartRef.current) / 1000);
-      setLiveTimeSpent((task.timeSpent || 0) + Math.max(0, elapsed));
-    };
-
-    tick(); // immediate first tick
-    const timer = setInterval(tick, 1000);
-    return () => clearInterval(timer);
-  }, [task.status, task.timeSpent]);
 
   const { lang } = useThemeLang();
   const t = translations[lang] || translations.vi;
@@ -194,14 +134,14 @@ export default function TaskCard({
     if (!dateString || task.status === "completed") return null;
     const now = new Date();
     const dueDate = new Date(dateString);
-    
+
     const diffTime = dueDate.getTime() - now.getTime();
     const diffHours = diffTime / (1000 * 60 * 60);
 
     if (diffHours < 0) {
-        return { text: t.overdue, color: "bg-rose-500/10 text-rose-500 border-rose-500/20" };
-    } else if (diffHours <= 12) { 
-        return { text: t.dueSoon, color: "bg-amber-500/10 text-amber-500 border-amber-500/20" };
+      return { text: t.overdue, color: "bg-rose-500/10 text-rose-500 border-rose-500/20" };
+    } else if (diffHours <= 12) {
+      return { text: t.dueSoon, color: "bg-amber-500/10 text-amber-500 border-amber-500/20" };
     }
     return null;
   };
@@ -229,10 +169,10 @@ export default function TaskCard({
       ? "cursor-grabbing border-indigo-500 bg-[#0f172a] shadow-2xl scale-[1.04] rotate-[1.5deg] z-50 relative"
       : "cursor-grabbing border-indigo-300 bg-white shadow-2xl scale-[1.04] rotate-[1.5deg] z-50 relative"
     : isDragging
-    ? isDark
-      ? "opacity-15 border-dashed border-slate-700 bg-slate-950/40"
-      : "opacity-15 border-dashed border-slate-300 bg-slate-200/20"
-    : "cursor-grab";
+      ? isDark
+        ? "opacity-15 border-dashed border-slate-700 bg-slate-950/40"
+        : "opacity-15 border-dashed border-slate-300 bg-slate-200/20"
+      : "cursor-grab";
 
   return (
     <motion.div
@@ -245,13 +185,12 @@ export default function TaskCard({
       animate={isOverlayPreview ? false : { opacity: 1, y: 0 }}
       exit={isOverlayPreview ? false : { opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.12, ease: "easeOut" }}
-      className={`flex flex-col justify-between rounded-xl border p-4 shadow-lg backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-150 ${dragClass} ${
-        isOverlayPreview
+      className={`flex flex-col justify-between rounded-xl border p-4 shadow-lg backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-150 ${dragClass} ${isOverlayPreview
           ? ""
           : isDark
-          ? "border-slate-800/80 bg-slate-900/40 hover:border-slate-700/50 hover:shadow-indigo-950/10"
-          : "border-slate-200/80 bg-white/75 hover:border-slate-300 shadow-slate-100/30 hover:shadow-xl hover:shadow-slate-200/45"
-      }`}
+            ? "border-slate-800/80 bg-slate-900/40 hover:border-slate-700/50 hover:shadow-indigo-950/10"
+            : "border-slate-200/80 bg-white/75 hover:border-slate-300 shadow-slate-100/30 hover:shadow-xl hover:shadow-slate-200/45"
+        }`}
     >
       {isEditing ? (
         <div className="space-y-3">
@@ -259,9 +198,8 @@ export default function TaskCard({
           <div>
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Title</label>
             <input
-              className={`mt-1 w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition-colors duration-150 ${
-                isDark ? "border-slate-800 bg-slate-950/50 text-slate-200" : "border-slate-200 bg-slate-50 text-slate-800"
-              }`}
+              className={`mt-1 w-full rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition-colors duration-150 ${isDark ? "border-slate-800 bg-slate-950/50 text-slate-200" : "border-slate-200 bg-slate-50 text-slate-800"
+                }`}
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
               required
@@ -272,9 +210,8 @@ export default function TaskCard({
           <div>
             <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Description</label>
             <textarea
-              className={`mt-1 w-full resize-none rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition-colors duration-150 ${
-                isDark ? "border-slate-800 bg-slate-950/50 text-slate-300" : "border-slate-200 bg-slate-50 text-slate-700"
-              }`}
+              className={`mt-1 w-full resize-none rounded-lg border px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition-colors duration-150 ${isDark ? "border-slate-800 bg-slate-950/50 text-slate-300" : "border-slate-200 bg-slate-50 text-slate-700"
+                }`}
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
               rows={2}
@@ -286,9 +223,8 @@ export default function TaskCard({
             <div>
               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t.priorityLabel}</label>
               <select
-                className={`mt-1 w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-indigo-500 cursor-pointer transition-colors duration-150 ${
-                  isDark ? "border-slate-800 bg-slate-950/50 text-slate-300" : "border-slate-200 bg-slate-50 text-slate-700"
-                }`}
+                className={`mt-1 w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-indigo-500 cursor-pointer transition-colors duration-150 ${isDark ? "border-slate-800 bg-slate-950/50 text-slate-300" : "border-slate-200 bg-slate-50 text-slate-700"
+                  }`}
                 value={editPriority}
                 onChange={(e) => setEditPriority(e.target.value)}
               >
@@ -301,9 +237,8 @@ export default function TaskCard({
               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t.dueDateLabel}</label>
               <input
                 type="date"
-                className={`mt-1 w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-indigo-500 cursor-pointer transition-colors duration-150 ${
-                  isDark ? "border-slate-800 bg-slate-950/50 text-slate-300" : "border-slate-200 bg-slate-50 text-slate-755"
-                }`}
+                className={`mt-1 w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-indigo-500 cursor-pointer transition-colors duration-150 ${isDark ? "border-slate-800 bg-slate-950/50 text-slate-300" : "border-slate-200 bg-slate-50 text-slate-755"
+                  }`}
                 value={editDueDate}
                 onChange={(e) => setEditDueDate(e.target.value)}
                 style={{ colorScheme: isDark ? "dark" : "light" }}
@@ -314,9 +249,8 @@ export default function TaskCard({
           {/* Save/Cancel Buttons */}
           <div className="flex justify-end gap-2 pt-2">
             <button
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                isDark ? "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-              }`}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${isDark ? "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                }`}
               onClick={() => {
                 setEditTitle(task.title);
                 setEditDescription(task.description || "");
@@ -341,42 +275,40 @@ export default function TaskCard({
             {/* Header badges and Checkbox */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
-                  <span
-                    className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${
-                      task.priority === "high"
-                        ? "bg-rose-500/15 text-rose-400 border-rose-500/20"
-                        : task.priority === "medium"
+                <span
+                  className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${task.priority === "high"
+                      ? "bg-rose-500/15 text-rose-400 border-rose-500/20"
+                      : task.priority === "medium"
                         ? "bg-amber-500/15 text-amber-400 border-amber-500/20"
                         : isDark
-                        ? "bg-slate-800/60 text-slate-400 border-slate-700/30"
-                        : "bg-slate-100 text-slate-500 border-slate-200/50"
+                          ? "bg-slate-800/60 text-slate-400 border-slate-700/30"
+                          : "bg-slate-100 text-slate-500 border-slate-200/50"
                     }`}
-                  >
-                    {task.priority === "high" ? t.high : task.priority === "medium" ? t.medium : t.low}
-                  </span>
+                >
+                  {task.priority === "high" ? t.high : task.priority === "medium" ? t.medium : t.low}
+                </span>
 
-                  {(() => {
-                      const badge = getDeadlineBadge(task.dueDate);
-                      if (badge) {
-                          return (
-                              <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${badge.color}`}>
-                                  {badge.text}
-                              </span>
-                          );
-                      }
-                      return null;
-                  })()}
+                {(() => {
+                  const badge = getDeadlineBadge(task.dueDate);
+                  if (badge) {
+                    return (
+                      <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${badge.color}`}>
+                        {badge.text}
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {task.dueDate && (
                 <span
-                  className={`flex items-center gap-1.5 text-[10px] font-semibold transition-colors duration-300 ${
-                    isOverdue(task.dueDate)
+                  className={`flex items-center gap-1.5 text-[10px] font-semibold transition-colors duration-300 ${isOverdue(task.dueDate)
                       ? "text-rose-400"
                       : isDark
-                      ? "text-slate-400"
-                      : "text-slate-500"
-                  }`}
+                        ? "text-slate-400"
+                        : "text-slate-500"
+                    }`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -400,20 +332,18 @@ export default function TaskCard({
             {/* Task Title & Description */}
             <div className="mt-3">
               <h3
-                className={`text-sm font-bold tracking-tight transition-colors duration-300 ${
-                  task.status === "completed" 
-                    ? "line-through text-slate-500" 
-                    : isDark 
-                    ? "text-slate-100" 
-                    : "text-slate-800"
-                }`}
+                className={`text-sm font-bold tracking-tight transition-colors duration-300 ${task.status === "completed"
+                    ? "line-through text-slate-500"
+                    : isDark
+                      ? "text-slate-100"
+                      : "text-slate-800"
+                  }`}
               >
                 {task.title}
               </h3>
               {task.description && (
-                <p className={`mt-1 text-xs line-clamp-2 leading-relaxed transition-colors duration-300 ${
-                  isDark ? "text-slate-400" : "text-slate-650"
-                }`}>
+                <p className={`mt-1 text-xs line-clamp-2 leading-relaxed transition-colors duration-300 ${isDark ? "text-slate-400" : "text-slate-650"
+                  }`}>
                   {task.description}
                 </p>
               )}
@@ -434,7 +364,7 @@ export default function TaskCard({
               <span>
                 {t.timeSpent}
                 <span className={`font-semibold ${task.status === "in-progress" ? "text-indigo-500 dark:text-indigo-400" : isDark ? "text-slate-300" : "text-slate-700"}`}>
-                  {formatTime(liveTimeSpent)}
+                  {formatTime(task.timeSpent || 0)}
                 </span>
               </span>
               {task.status === "in-progress" && (
@@ -446,9 +376,8 @@ export default function TaskCard({
           </div>
 
           {/* Footer selectors and buttons */}
-          <div className={`mt-4 flex items-center gap-2 border-t pt-3 transition-colors duration-300 ${
-            isDark ? "border-slate-850/60" : "border-slate-100"
-          }`}>
+          <div className={`mt-4 flex items-center gap-2 border-t pt-3 transition-colors duration-300 ${isDark ? "border-slate-850/60" : "border-slate-100"
+            }`}>
             <StatusDropdown
               status={task.status}
               onChangeStatus={(newStatus) => onChangeStatus(task._id, newStatus)}
@@ -456,9 +385,8 @@ export default function TaskCard({
             />
 
             <button
-              className={`rounded-lg p-1.5 transition cursor-pointer ${
-                isDark ? "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-              }`}
+              className={`rounded-lg p-1.5 transition cursor-pointer ${isDark ? "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                }`}
               onClick={() => setIsEditing(true)}
               title="Edit Task"
             >
@@ -479,9 +407,8 @@ export default function TaskCard({
             </button>
 
             <button
-              className={`rounded-lg p-1.5 transition cursor-pointer ${
-                isDark ? "text-rose-400 hover:bg-rose-500/10 hover:text-rose-350" : "text-rose-500 hover:bg-rose-50 hover:text-rose-600"
-              }`}
+              className={`rounded-lg p-1.5 transition cursor-pointer ${isDark ? "text-rose-400 hover:bg-rose-500/10 hover:text-rose-350" : "text-rose-500 hover:bg-rose-50 hover:text-rose-600"
+                }`}
               onClick={() => setShowConfirm(true)}
               title="Delete Task"
             >

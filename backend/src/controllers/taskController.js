@@ -377,13 +377,13 @@ exports.bulkUpdateTasks = async (req, res) => {
         if (!Array.isArray(ids) || ids.length === 0) {
             return res.status(400).json({ message: "Task IDs are required" });
         }
-        
+
         if (!updateData) {
-             return res.status(400).json({ message: "Update data is required" });
+            return res.status(400).json({ message: "Update data is required" });
         }
 
         const validIds = ids.filter(isValidObjectId);
-        
+
         await Task.updateMany(
             { _id: { $in: validIds }, user: req.user._id },
             { $set: updateData }
@@ -463,7 +463,7 @@ exports.getTaskAnalytics = async (req, res) => {
         const last7DaysTasks = [];
         const today = new Date();
         today.setHours(23, 59, 59, 999);
-        
+
         for (let i = 6; i >= 0; i--) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);

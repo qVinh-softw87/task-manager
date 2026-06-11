@@ -126,6 +126,20 @@ export const translations = {
     permanentDelete: "Xóa vĩnh viễn",
     deletedAt: "Sẽ xóa vĩnh viễn sau",
     days: "ngày",
+
+    // Profile & Avatar
+    profileTitle: "Thông tin cá nhân",
+    changeInfoTitle: "Cập nhật hồ sơ",
+    changePasswordTitle: "Thay đổi mật khẩu",
+    currentPasswordLabel: "Mật khẩu hiện tại",
+    newPasswordLabel: "Mật khẩu mới",
+    updateSuccess: "Cập nhật hồ sơ thành công!",
+    updateError: "Cập nhật hồ sơ thất bại.",
+    changePasswordSuccess: "Đổi mật khẩu thành công!",
+    changePasswordError: "Đổi mật khẩu thất bại. Vui lòng kiểm tra lại.",
+    editAvatarTooltip: "Thay đổi ảnh đại diện",
+    saveChanges: "Lưu thay đổi",
+    savingChanges: "Đang lưu...",
   },
   en: {
     // General
@@ -254,5 +268,19 @@ export const translations = {
     permanentDelete: "Delete permanently",
     deletedAt: "Will be permanently deleted in",
     days: "days",
+
+    // Profile & Avatar
+    profileTitle: "User Profile",
+    changeInfoTitle: "Update Profile",
+    changePasswordTitle: "Change Password",
+    currentPasswordLabel: "Current Password",
+    newPasswordLabel: "New Password",
+    updateSuccess: "Profile updated successfully!",
+    updateError: "Failed to update profile.",
+    changePasswordSuccess: "Password changed successfully!",
+    changePasswordError: "Failed to change password. Please check your inputs.",
+    editAvatarTooltip: "Change avatar picture",
+    saveChanges: "Save Changes",
+    savingChanges: "Saving...",
   }
 };

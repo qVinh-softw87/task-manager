@@ -44,9 +44,10 @@ axiosClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    const isRefreshRequest = originalRequest.url && originalRequest.url.includes("/api/auth/refresh");
 
     // Avoid crash if error.response does not exist (e.g., network issue)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshRequest) {
       originalRequest._retry = true;
 
       try {

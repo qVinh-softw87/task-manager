@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import TaskForm from "../components/TaskForm";
 import TaskList from "../components/TaskList";
 import TrashList from "../components/TrashList";
+import ProfileModal from "../components/ProfileModal";
 import { useAuth } from "../hooks/useAuth";
 import { useTasks } from "../hooks/useTasks";
 import { useThemeLang } from "../context/ThemeLangContext";
@@ -29,6 +30,7 @@ export default function DashboardPage() {
   const { theme, toggleTheme, lang, toggleLang } = useThemeLang();
   const [isPinned, setIsPinned] = useState(true);
   const [showTrash, setShowTrash] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   // isHovered: sidebar is floating open because user is hovering over toggle/sidebar
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef(null);
@@ -78,7 +80,12 @@ export default function DashboardPage() {
   const t = translations[lang] || translations.vi;
 
   const displayName = user?.name || user?.email?.split("@")[0] || "User";
-  const initials = displayName.slice(0, 2).toUpperCase();
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
   
   // Metrics always reflect Dashboard tasks
   const totalTasks = dashboard.tasks.length;
@@ -156,7 +163,7 @@ export default function DashboardPage() {
         {/* Workspace Brand - only shown when pinned */}
         {isPinned && (
           <div className="mx-3 mt-3 flex items-center justify-between p-1 border-b pb-3 border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg flex-1 cursor-pointer transition">
+            <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg flex-1 transition">
               <div className={`flex h-7 w-7 items-center justify-center rounded-lg font-bold text-white shadow-md transition-all duration-300 ${
                 isDark 
                   ? "bg-indigo-600 shadow-indigo-600/30" 
@@ -173,7 +180,7 @@ export default function DashboardPage() {
         <nav className="mt-4 space-y-1 px-3 text-sm">
           <div 
             onClick={() => setShowTrash(false)}
-            className={`cursor-pointer rounded-lg px-3.5 py-2 font-semibold flex items-center gap-2.5 transition ${
+            className={`rounded-lg px-3.5 py-2 font-semibold flex items-center gap-2.5 transition ${
             !showTrash
               ? (isDark 
                 ? "bg-slate-800/40 border border-slate-800/30 text-slate-200" 
@@ -187,7 +194,7 @@ export default function DashboardPage() {
 
           <div 
             onClick={() => setShowTrash(true)}
-            className={`cursor-pointer rounded-lg px-3.5 py-2 font-semibold flex items-center gap-2.5 transition ${
+            className={`rounded-lg px-3.5 py-2 font-semibold flex items-center gap-2.5 transition ${
             showTrash
               ? (isDark 
                 ? "bg-rose-500/10 border border-rose-500/20 text-rose-400" 
@@ -205,7 +212,7 @@ export default function DashboardPage() {
         <div className={`border-t p-3 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
           <button
             onClick={logoutUser}
-            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-bold border transition-all duration-200 cursor-pointer ${
+            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-bold border transition-all duration-200 ${
               isDark
                 ? "border-slate-800 bg-slate-950/60 text-slate-400 hover:text-rose-400 hover:border-rose-950/50 hover:bg-rose-950/20"
                 : "border-slate-200 bg-white text-slate-600 hover:text-rose-650 hover:border-rose-200 hover:bg-rose-50"
@@ -242,7 +249,7 @@ export default function DashboardPage() {
               </h1>
               <button
                 onClick={handleToggleClick}
-                className={`rounded-lg p-2 cursor-pointer flex-shrink-0 border transition-all duration-150 relative z-50 ${
+                className={`rounded-lg p-2 flex-shrink-0 border transition-all duration-150 relative z-50 ${
                   isDark
                     ? "border-slate-800/60 bg-[#131929] text-slate-300 hover:text-slate-100 hover:bg-slate-800/80"
                     : "border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
@@ -271,7 +278,7 @@ export default function DashboardPage() {
             {/* Language Toggle */}
             <button
               onClick={toggleLang}
-              className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm ${
+              className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer ${
                 isDark
                   ? "border-slate-800 bg-slate-950/60 text-slate-300 hover:text-slate-100 hover:bg-slate-900/50"
                   : "border-slate-200 bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50"
@@ -280,39 +287,44 @@ export default function DashboardPage() {
             >
               {lang === "vi" ? "EN" : "VI"}
             </button>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className={`p-2 rounded-lg border transition-all duration-200 cursor-pointer shadow-sm ${
-                isDark
-                  ? "border-slate-800 bg-slate-950/60 text-amber-400 hover:text-amber-300 hover:bg-slate-900/50"
-                  : "border-slate-200 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-slate-50"
-              }`}
-              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {isDark ? (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m0 13.5V21M4.95 4.95l1.58 1.58m9.02 9.02l1.58 1.58M3 12h2.25m13.5 0H21M5.75 5.75l1.58 1.58m9.02 9.02l1.58 1.58M12 7.75a4.25 4.25 0 100 8.5 4.25 4.25 0 000-8.5z" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-                </svg>
-              )}
-            </button>
-
-            {/* Facebook-style User Avatar */}
-            <div
-              className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold border transition-all duration-300 shadow-sm cursor-default ${
-                isDark 
-                  ? "border-slate-800 bg-slate-950/60 text-indigo-400" 
-                  : "border-slate-200 bg-white text-indigo-600"
-              }`}
-              title={user?.email || displayName}
-            >
-              {initials}
-            </div>
+ 
+             {/* Theme Toggle */}
+             <button
+               onClick={toggleTheme}
+               className={`p-2 rounded-lg border transition-all duration-200 shadow-sm cursor-pointer ${
+                 isDark
+                   ? "border-slate-800 bg-slate-950/60 text-amber-400 hover:text-amber-300 hover:bg-slate-900/50"
+                   : "border-slate-200 bg-white text-indigo-600 hover:text-indigo-700 hover:bg-slate-50"
+               }`}
+               title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+             >
+               {isDark ? (
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4">
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m0 13.5V21M4.95 4.95l1.58 1.58m9.02 9.02l1.58 1.58M3 12h2.25m13.5 0H21M5.75 5.75l1.58 1.58m9.02 9.02l1.58 1.58M12 7.75a4.25 4.25 0 100 8.5 4.25 4.25 0 000-8.5z" />
+                 </svg>
+               ) : (
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4">
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                 </svg>
+               )}
+             </button>
+ 
+             {/* Facebook-style User Avatar */}
+             <div
+               onClick={() => setIsProfileOpen(true)}
+               className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-bold border transition-all duration-300 shadow-sm hover:opacity-85 overflow-hidden cursor-pointer ${
+                 isDark 
+                   ? "border-slate-800 bg-slate-950/60 text-indigo-400" 
+                   : "border-slate-200 bg-white text-indigo-600"
+               }`}
+               title={user?.email || displayName}
+             >
+               {user?.avatar ? (
+                 <img src={user.avatar} alt={displayName} className="h-full w-full object-cover" />
+               ) : (
+                 initials
+               )}
+             </div>
           </div>
         </div>
 
@@ -392,6 +404,8 @@ export default function DashboardPage() {
           />
         )}
       </main>
+
+      <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </motion.div>
   );
 }

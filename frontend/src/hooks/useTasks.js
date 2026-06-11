@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
     getTasks,
     createTask,
@@ -18,7 +18,7 @@ export function useTasks(isTrash = false) {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    
+
     // Pagination & Sorting state
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(false);
@@ -36,7 +36,7 @@ export function useTasks(isTrash = false) {
             const params = { page: currentPage, limit: 20, isTrash };
             const result = await getTasks(params);
             const fetchedTasks = result.data || result;
-            
+
             if (reset) {
                 setTasks(fetchedTasks);
             } else {
@@ -215,23 +215,64 @@ export function useTasks(isTrash = false) {
     async function handlePermanentDelete(id) {
         const previousTasks = [...tasks];
         setTasks(prev => prev.filter(task => task._id !== id));
-        toast.success(t.toastPermanentDeleteSuccess);
+        toast.error(t.toastPermDeleteSuccess);
 
         try {
             await permanentDeleteTask(id);
             setError("");
         } catch (err) {
             setTasks(previousTasks);
-            const msg = getErrorMessage(err, t, t.toastPermanentDeleteError);
+            const msg = getErrorMessage(err, t, t.toastPermDeleteError);
             setError(msg);
             toast.error(msg);
         }
     }
 
+    const tasksRef = useRef(tasks);
+    useEffect(() => {
+        tasksRef.current = tasks;
+    }, [tasks]);
+
+    // Client-side timer: tick every second for any task that is "in-progress"
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setTasks(prev => {
+                const hasInProgress = prev.some(task => task.status === "in-progress");
+                if (!hasInProgress) return prev;
+
+                return prev.map(task =>
+                    task.status === "in-progress"
+                        ? { ...task, timeSpent: (task.timeSpent || 0) + 1 }
+                        : task
+                );
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
+    // Periodic sync: quietly save current timeSpent of any "in-progress" task to database every 10 seconds
+    useEffect(() => {
+        const syncTimer = setInterval(() => {
+            const inProgressTasks = tasksRef.current.filter(
+                task => task.status === "in-progress" && task._id && !task._id.startsWith("temp_")
+            );
+            inProgressTasks.forEach(async (task) => {
+                try {
+                    await updateTask(task._id, { timeSpent: task.timeSpent });
+                } catch (err) {
+                    console.error("Failed to sync task timeSpent:", err);
+                }
+            });
+        }, 10000);
+
+        return () => clearInterval(syncTimer);
+    }, []);
+
     useEffect(() => {
         setPage(1);
         loadTasks(true, 1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isTrash]);
 
     function refreshTasks() {

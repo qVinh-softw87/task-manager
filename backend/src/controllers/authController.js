@@ -47,6 +47,7 @@ exports.register = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                avatar: user.avatar,
                 token: accessToken,
             },
         });
@@ -103,6 +104,7 @@ exports.login = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                avatar: user.avatar,
                 token: accessToken,
             },
         });
@@ -123,6 +125,7 @@ exports.getMe = async (req, res) => {
                 name: req.user.name,
                 email: req.user.email,
                 role: req.user.role,
+                avatar: req.user.avatar,
             },
         });
     } catch (error) {
@@ -135,7 +138,7 @@ exports.getMe = async (req, res) => {
 // Update profile
 exports.updateProfile = async (req, res) => {
     try {
-        const allowedUpdateFields = ["name", "email"];
+        const allowedUpdateFields = ["name", "email", "avatar"];
         const updateFields = Object.keys(req.body);
 
         if (updateFields.length === 0) {
@@ -214,6 +217,10 @@ exports.updateProfile = async (req, res) => {
             user.name = trimmedName;
         }
 
+        if (req.body.avatar !== undefined) {
+            user.avatar = req.body.avatar;
+        }
+
         await user.save();
 
         return res.status(200).json({
@@ -223,6 +230,7 @@ exports.updateProfile = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                avatar: user.avatar,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt,
             },
@@ -350,6 +358,7 @@ exports.refresh = async (req, res) => {
                     name: user.name,
                     email: user.email,
                     role: user.role,
+                    avatar: user.avatar,
                 },
             },
         });

@@ -67,9 +67,15 @@ export function AuthProvider({ children }) {
       setLoading(true);
       setError(null);
 
-      const result = await authApi.getMe();
+      const result = await authApi.refresh();
 
-      setUser(result.data);
+      if (result && result.data) {
+        setAccessToken(result.data.token);
+        setUser(result.data.user);
+      } else {
+        setAccessToken(null);
+        setUser(null);
+      }
     } catch {
       setAccessToken(null);
       setUser(null);
@@ -97,6 +103,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         loading,
         error,
         loginUser,

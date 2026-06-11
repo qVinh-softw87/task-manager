@@ -12,6 +12,10 @@ export async function getMe() {
   return axiosClient.get("/api/auth/me");
 }
 
+export async function refresh() {
+  return axiosClient.post("/api/auth/refresh");
+}
+
 export async function updateProfile(profileData) {
   return axiosClient.patch("/api/auth/profile", profileData);
 }
