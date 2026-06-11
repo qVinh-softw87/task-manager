@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
 
       return authUser;
     } catch (error) {
-      setError(error.message || "Login failed");
+      setError(error.response?.data?.message || error.message || "Login failed");
       throw error;
     } finally {
       setLoading(false);
@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
 
       return authUser;
     } catch (error) {
-      setError(error.message || "Register failed");
+      setError(error.response?.data?.message || error.message || "Register failed");
       throw error;
     } finally {
       setLoading(false);

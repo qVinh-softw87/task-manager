@@ -44,10 +44,11 @@ axiosClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    const isRefreshRequest = originalRequest.url && originalRequest.url.includes("/api/auth/refresh");
+    const url = originalRequest?.url || "";
+    const isAuthRequest = url.includes("/api/auth/login") || url.includes("/api/auth/register") || url.includes("/api/auth/refresh");
 
     // Avoid crash if error.response does not exist (e.g., network issue)
-    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshRequest) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       originalRequest._retry = true;
 
       try {
@@ -78,13 +79,14 @@ axiosClient.interceptors.response.use(
     }
 
     // Provide user-friendly messages for common status codes
-  const status = error.response?.status;
-  if (status === 401) {
-    // Authentication error – user needs to re-login
-    return Promise.reject({ message: "Session expired, please log in again.", status });
-  }
-  // Fallback to original error payload
-  return Promise.reject(error.response?.data || error);
+    const status = error.response?.status;
+    if (status === 401 && !isAuthRequest) {
+      // Authentication error – user needs to re-login
+      return Promise.reject({ message: "Session expired, please log in again.", status });
+    }
+    // Fallback to original error payload: reject with the original Axios error
+    // so that calling handlers (like getErrorMessage) can inspect the response and config.
+    return Promise.reject(error);
   }
 );
 
