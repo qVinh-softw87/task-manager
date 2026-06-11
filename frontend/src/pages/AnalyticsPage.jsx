@@ -269,9 +269,7 @@ export default function AnalyticsPage() {
           <div
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            className={`flex flex-col gap-2 relative z-30 w-60 ${
-              !isPinned ? "-ml-4 md:-ml-6 lg:-ml-14" : ""
-            }`}
+            className="flex flex-col gap-2 relative z-30 w-60"
           >
             <div className="flex items-center gap-3">
               <h1 className={`text-2xl font-bold tracking-tight ${isDark ? "text-slate-100" : "text-slate-900"}`}>
