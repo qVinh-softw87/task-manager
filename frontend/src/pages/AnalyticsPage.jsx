@@ -41,7 +41,16 @@ const ChartSkeleton = ({ isDark }) => (
 
 export default function AnalyticsPage() {
   const { theme, toggleTheme, lang, toggleLang } = useThemeLang();
-  const [isPinned, setIsPinned] = useState(true);
+  const [isPinned, setIsPinned] = useState(() => {
+    if (typeof window !== "undefined") {
+      const isMobileSize = window.innerWidth < 768;
+      if (isMobileSize) return false;
+      return localStorage.getItem("sidebar_pinned") !== "false";
+    }
+    return true;
+  });
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef(null);
 
@@ -55,7 +64,23 @@ export default function AnalyticsPage() {
   const initials = displayName.slice(0, 2).toUpperCase();
 
   useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsPinned(false);
+      } else {
+        const pinned = localStorage.getItem("sidebar_pinned") !== "false";
+        setIsPinned(pinned);
+        setIsMobileOpen(false);
+      }
+    };
+    
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
     return () => {
+      window.removeEventListener("resize", handleResize);
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, []);
@@ -78,15 +103,23 @@ export default function AnalyticsPage() {
   };
 
   function handleToggleClick() {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
+    if (isMobile) {
+      setIsMobileOpen((prev) => !prev);
+    } else {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      setIsHovered(false);
+      setIsPinned((prev) => {
+        const newVal = !prev;
+        localStorage.setItem("sidebar_pinned", newVal ? "true" : "false");
+        return newVal;
+      });
     }
-    setIsHovered(false);
-    setIsPinned((prev) => !prev);
   }
 
-  const isSidebarVisible = isPinned || isHovered;
+  const isSidebarVisible = isMobile ? isMobileOpen : (isPinned || isHovered);
 
   // Prepare Chart Data
   const COLORS = {
@@ -112,12 +145,22 @@ export default function AnalyticsPage() {
         isDark ? "bg-[#0b1120] text-slate-200" : "bg-slate-50 text-slate-800"
       }`}
     >
+      {/* Mobile Sidebar Backdrop */}
+      {isMobile && isMobileOpen && (
+        <div
+          onClick={() => setIsMobileOpen(false)}
+          className="fixed inset-0 z-40 bg-black/45 backdrop-blur-sm transition-opacity duration-300"
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className={`fixed inset-y-0 left-0 z-40 transition-all duration-300 border-r flex flex-col justify-between shadow-lg backdrop-blur-md ${
-          isSidebarVisible ? "w-60 translate-x-0" : "w-60 -translate-x-full lg:-translate-x-[calc(100%-4rem)]"
+        className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 border-r flex flex-col justify-between shadow-lg backdrop-blur-md ${
+          isSidebarVisible 
+            ? "w-60 translate-x-0" 
+            : (isMobile ? "w-60 -translate-x-full" : "w-60 -translate-x-[calc(100%-4rem)]")
         } ${isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-200"}`}
       >
         <div className="p-4 flex flex-col h-full">
@@ -132,24 +175,41 @@ export default function AnalyticsPage() {
               </span>
             </div>
             
-            <button
-              onClick={handleToggleClick}
-              className={`rounded-lg p-2 transition-all duration-150 border hidden lg:flex ${
-                isDark
-                  ? "border-slate-800 bg-[#131929] text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-                  : "border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-              }`}
-              title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
-            >
-              <SidebarIcon className="w-5 h-5" />
-            </button>
+            {!isMobile && (
+              <button
+                onClick={handleToggleClick}
+                className={`rounded-lg p-2 transition-all duration-150 border hidden lg:flex cursor-pointer ${
+                  isDark
+                    ? "border-slate-800 bg-[#131929] text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                    : "border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                }`}
+                title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+              >
+                <SidebarIcon className="w-5 h-5" />
+              </button>
+            )}
+
+            {isMobile && isMobileOpen && (
+              <button
+                onClick={() => setIsMobileOpen(false)}
+                className={`rounded-lg p-1.5 border transition-all duration-150 cursor-pointer ${
+                  isDark
+                    ? "border-slate-800 bg-slate-900/40 text-slate-400 hover:text-slate-200"
+                    : "border-slate-200 bg-slate-50 text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Navigation Links */}
           <nav className="flex-1 space-y-2 mt-4">
             <Link
               to="/"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium border ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium border cursor-pointer ${
                 isDark
                   ? "border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
                   : "border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900"
@@ -165,7 +225,7 @@ export default function AnalyticsPage() {
 
             <Link
               to="/analytics"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-bold shadow-sm border ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-bold shadow-sm border cursor-pointer ${
                 isDark
                   ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
                   : "bg-indigo-50 text-indigo-700 border-indigo-100"
@@ -182,7 +242,7 @@ export default function AnalyticsPage() {
 
           <button
             onClick={logoutUser}
-            className={`mt-auto flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium border border-transparent ${
+            className={`mt-auto flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium border border-transparent cursor-pointer ${
               isDark
                 ? "text-red-400 hover:bg-red-500/10 hover:border-red-500/20"
                 : "text-red-600 hover:bg-red-50 hover:border-red-100"
@@ -200,8 +260,8 @@ export default function AnalyticsPage() {
 
       {/* Main Content */}
       <main
-        className={`flex-1 p-6 lg:p-10 lg:pt-12 transition-all duration-300 w-full max-w-6xl mx-auto ${
-          isPinned ? "lg:ml-60" : "lg:ml-16"
+        className={`flex-1 px-4 py-8 md:p-6 lg:p-10 lg:pt-12 transition-all duration-300 w-full max-w-6xl mx-auto ${
+          isPinned ? "lg:ml-60" : (isMobile ? "" : "lg:ml-16")
         }`}
       >
         {/* Header */}
@@ -209,8 +269,8 @@ export default function AnalyticsPage() {
           <div
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            className={`flex flex-col gap-2 relative z-50 w-60 ${
-              !isPinned ? "-ml-6 lg:-ml-14 pl-6 lg:pl-14" : ""
+            className={`flex flex-col gap-2 relative z-30 w-60 ${
+              !isPinned ? "-ml-4 md:-ml-6 lg:-ml-14" : ""
             }`}
           >
             <div className="flex items-center gap-3">
@@ -219,20 +279,26 @@ export default function AnalyticsPage() {
               </h1>
               <button
                 onClick={handleToggleClick}
-                className={`rounded-lg p-2 cursor-pointer flex-shrink-0 border transition-all duration-150 relative z-50 ${
+                className={`rounded-lg p-2 cursor-pointer flex-shrink-0 border transition-all duration-150 relative z-30 ${
                   isDark
                     ? "border-slate-800/60 bg-[#131929] text-slate-300 hover:text-slate-100 hover:bg-slate-800/80"
                     : "border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                } ${isHovered ? (isDark ? "text-indigo-400 border-indigo-500/50 bg-[#161f38]" : "text-indigo-600 border-indigo-200 bg-indigo-50") : ""}`}
+                } ${isHovered && !isMobile ? (isDark ? "text-indigo-400 border-indigo-500/50 bg-[#161f38]" : "text-indigo-600 border-indigo-200 bg-indigo-50") : ""}`}
               >
-                {isPinned ? (
+                {isSidebarVisible ? (
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4.5 h-4.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4.5 h-4.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
-                  </svg>
+                  isMobile ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4.5 h-4.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-4.5 h-4.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
+                    </svg>
+                  )
                 )}
               </button>
             </div>
