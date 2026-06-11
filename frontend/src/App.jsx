@@ -3,7 +3,6 @@ import { AnimatePresence } from "framer-motion";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
-import AnalyticsPage from "./pages/AnalyticsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -20,7 +19,7 @@ function AnimatedRoutes() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
+
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

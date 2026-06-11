@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     getTasks,
     createTask,
@@ -121,15 +121,9 @@ export function useTasks(isTrash = false) {
         }
     }
 
-    async function changeStatus(id, newStatus, isDragOver = false, revertStatus = null, customTimeSpent = null) {
+    async function changeStatus(id, newStatus, isDragOver = false, revertStatus = null) {
         setTasks(prev => prev.map(task =>
-            task._id === id 
-                ? { 
-                    ...task, 
-                    status: newStatus,
-                    ...(customTimeSpent !== null ? { timeSpent: customTimeSpent } : {})
-                  } 
-                : task
+            task._id === id ? { ...task, status: newStatus } : task
         ));
 
         if (isDragOver) return;
@@ -137,11 +131,7 @@ export function useTasks(isTrash = false) {
         toast.info(t.toastStatusChanged);
 
         try {
-            const updatePayload = { status: newStatus };
-            if (customTimeSpent !== null) {
-                updatePayload.timeSpent = customTimeSpent;
-            }
-            const res = await updateTask(id, updatePayload);
+            const res = await updateTask(id, { status: newStatus });
             if (res && res.data) {
                 setTasks(prev => prev.map(task => task._id === id ? res.data : task));
             }
@@ -238,7 +228,38 @@ export function useTasks(isTrash = false) {
         }
     }
 
+    // Global 1-second timer: tick timeSpent for all in-progress tasks
+    useEffect(() => {
+        if (isTrash) return;
 
+        const timer = setInterval(() => {
+            setTasks(prev => prev.map(task =>
+                task.status === "in-progress"
+                    ? { ...task, timeSpent: (task.timeSpent || 0) + 1 }
+                    : task
+            ));
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [isTrash]);
+
+    // Background sync: save timeSpent to DB every 10 seconds for in-progress tasks
+    useEffect(() => {
+        if (isTrash) return;
+
+        const syncTimer = setInterval(async () => {
+            const inProgressTasks = tasks.filter(t => t.status === "in-progress" && t._id && !t._id.startsWith("temp_"));
+            await Promise.all(
+                inProgressTasks.map(task =>
+                    updateTask(task._id, { timeSpent: task.timeSpent }).catch(err =>
+                        console.error("Failed to sync timeSpent for task", task._id, err)
+                    )
+                )
+            );
+        }, 10000);
+
+        return () => clearInterval(syncTimer);
+    }, [isTrash, tasks]);
 
     useEffect(() => {
         setPage(1);
@@ -267,4 +288,3 @@ export function useTasks(isTrash = false) {
         refreshTasks
     };
 }
-
