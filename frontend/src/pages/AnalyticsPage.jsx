@@ -153,11 +153,20 @@ export default function AnalyticsPage() {
         />
       )}
 
+      {/* Hover Bridge for smooth UX between sidebar and toggle button */}
+      {!isPinned && isHovered && !isMobile && (
+        <div
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          className="fixed left-0 top-[96px] h-[16px] w-60 z-30 bg-transparent pointer-events-auto"
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 border-r flex flex-col justify-between shadow-lg backdrop-blur-md ${
+        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-350 ease-out border-r flex flex-col justify-between shadow-lg backdrop-blur-md ${
           isSidebarVisible 
             ? "w-60 translate-x-0" 
             : (isMobile ? "w-60 -translate-x-full" : "w-60 -translate-x-[calc(100%-4rem)]")
@@ -260,15 +269,13 @@ export default function AnalyticsPage() {
 
       {/* Main Content */}
       <main
-        className={`flex-1 px-4 py-8 md:p-6 lg:p-10 lg:pt-12 transition-all duration-300 w-full max-w-6xl mx-auto ${
+        className={`flex-1 px-4 pt-14 pb-8 md:px-6 md:pt-16 lg:pr-14 transition-all duration-300 w-full max-w-6xl mx-auto ${
           isPinned ? "lg:ml-60" : (isMobile ? "" : "lg:ml-16")
         }`}
       >
         {/* Header */}
         <div className="flex justify-between items-start mb-8 relative z-20">
           <div
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
             className="flex flex-col gap-2 relative z-30 w-60"
           >
             <div className="flex items-center gap-3">
@@ -277,10 +284,12 @@ export default function AnalyticsPage() {
               </h1>
               <button
                 onClick={handleToggleClick}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
                 className={`rounded-lg p-2 cursor-pointer flex-shrink-0 border transition-all duration-150 relative z-30 ${
                   isDark
                     ? "border-slate-800/60 bg-[#131929] text-slate-300 hover:text-slate-100 hover:bg-slate-800/80"
-                    : "border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    : "border-slate-200 bg-white text-slate-650 hover:text-slate-900 hover:bg-slate-50"
                 } ${isHovered && !isMobile ? (isDark ? "text-indigo-400 border-indigo-500/50 bg-[#161f38]" : "text-indigo-600 border-indigo-200 bg-indigo-50") : ""}`}
               >
                 {isSidebarVisible ? (

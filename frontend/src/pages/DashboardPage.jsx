@@ -172,7 +172,7 @@ export default function DashboardPage() {
         <div
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="fixed left-0 top-[96px] h-[16px] w-[264px] lg:w-[296px] z-30 bg-transparent pointer-events-auto"
+          className="fixed left-0 top-[96px] h-[16px] w-60 z-30 bg-transparent pointer-events-auto"
         />
       )}
 
@@ -186,9 +186,9 @@ export default function DashboardPage() {
           opacity: isSidebarVisible ? 1 : 0,
         }}
         transition={{
-          type: "spring",
-          stiffness: 280,
-          damping: 26,
+          type: "tween",
+          ease: "easeOut",
+          duration: 0.32,
         }}
         className={`
           flex flex-col border-r fixed left-0 w-60 z-50
@@ -280,7 +280,7 @@ export default function DashboardPage() {
 
       {/* Main Panel */}
       <main
-        className={`min-w-0 flex-1 px-4 py-8 md:px-6 lg:pr-14 transition-all duration-300 ease-in-out ${
+        className={`min-w-0 flex-1 px-4 pt-14 pb-8 md:px-6 md:pt-16 lg:pr-14 transition-all duration-300 ease-in-out ${
           isPinned
             ? "pl-[264px] lg:pl-[296px]"
             : "lg:pl-14"
@@ -289,8 +289,6 @@ export default function DashboardPage() {
         {/* Header Title & Controls (Notion-style page header) */}
         <div className="mb-8 flex items-start justify-between gap-4">
           <div
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
             className="flex flex-col gap-2 relative z-30 w-60"
           >
             <div className="flex items-center gap-3">
@@ -299,10 +297,12 @@ export default function DashboardPage() {
               </h1>
               <button
                 onClick={handleToggleClick}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
                 className={`rounded-lg p-2 flex-shrink-0 border transition-all duration-150 relative z-30 cursor-pointer ${
                   isDark
                     ? "border-slate-800/60 bg-[#131929] text-slate-300 hover:text-slate-100 hover:bg-slate-800/80"
-                    : "border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    : "border-slate-200 bg-white text-slate-650 hover:text-slate-900 hover:bg-slate-50"
                 } ${isHovered && !isMobile ? (isDark ? "text-indigo-400 border-indigo-500/50 bg-[#161f38]" : "text-indigo-600 border-indigo-200 bg-indigo-50") : ""}`}
               >
                 {isSidebarVisible ? (
