@@ -4,7 +4,8 @@ import {
   DndContext,
   useSensor,
   useSensors,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useDroppable,
   DragOverlay,
 } from "@dnd-kit/core";
@@ -73,13 +74,20 @@ export default function TaskList({
   const isDark = theme === "dark";
   const [activeId, setActiveId] = useState(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: {
+      distance: 8,
+    },
+  });
+
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 250,
+      tolerance: 5,
+    },
+  });
+
+  const sensors = useSensors(mouseSensor, touchSensor);
 
   const dragStartStatusRef = useRef(null);
 
