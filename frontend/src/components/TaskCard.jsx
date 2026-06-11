@@ -5,6 +5,7 @@ import { formatTime } from "../utils/formatTime";
 import { useThemeLang } from "../context/ThemeLangContext";
 import { translations } from "../utils/translations";
 import ConfirmDialog from "./ConfirmDialog";
+import { updateTask } from "../api/taskApi";
 import {
   TASK_STATUSES,
   TASK_STATUS_LABELS,
@@ -110,6 +111,55 @@ export default function TaskCard({
     return new Date(task.dueDate).toISOString().split("T")[0];
   });
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isMobileSize, setIsMobileSize] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobileSize(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+  const [localTimeSpent, setLocalTimeSpent] = useState(task.timeSpent || 0);
+  const localTimeSpentRef = useRef(localTimeSpent);
+
+  useEffect(() => {
+    setLocalTimeSpent(task.timeSpent || 0);
+  }, [task.timeSpent]);
+
+  useEffect(() => {
+    localTimeSpentRef.current = localTimeSpent;
+  }, [localTimeSpent]);
+
+  useEffect(() => {
+    if (task.status !== "in-progress") return;
+
+    const timer = setInterval(() => {
+      setLocalTimeSpent((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [task.status]);
+
+  useEffect(() => {
+    if (task.status !== "in-progress" || !task._id || task._id.startsWith("temp_")) return;
+
+    const syncTimer = setInterval(async () => {
+      try {
+        await updateTask(task._id, { timeSpent: localTimeSpentRef.current });
+      } catch (err) {
+        console.error("Failed to sync local timeSpent:", err);
+      }
+    }, 10000);
+
+    return () => {
+      clearInterval(syncTimer);
+      if (task._id && !task._id.startsWith("temp_")) {
+        updateTask(task._id, { timeSpent: localTimeSpentRef.current }).catch((err) => {
+          console.error("Failed final sync of timeSpent:", err);
+        });
+      }
+    };
+  }, [task.status, task._id]);
 
 
 
@@ -180,7 +230,7 @@ export default function TaskCard({
       style={dragStyle}
       {...(!isOverlayPreview ? listeners : {})}
       {...(!isOverlayPreview ? attributes : {})}
-      layout={isOverlayPreview ? false : "position"}
+      layout={isOverlayPreview || isMobileSize ? false : "position"}
       initial={isOverlayPreview ? false : { opacity: 0, y: 8 }}
       animate={isOverlayPreview ? false : { opacity: 1, y: 0 }}
       exit={isOverlayPreview ? false : { opacity: 0, scale: 0.97 }}
@@ -364,7 +414,7 @@ export default function TaskCard({
               <span>
                 {t.timeSpent}
                 <span className={`font-semibold ${task.status === "in-progress" ? "text-indigo-500 dark:text-indigo-400" : isDark ? "text-slate-300" : "text-slate-700"}`}>
-                  {formatTime(task.timeSpent || 0)}
+                  {formatTime(localTimeSpent)}
                 </span>
               </span>
               {task.status === "in-progress" && (
@@ -380,7 +430,7 @@ export default function TaskCard({
             }`}>
             <StatusDropdown
               status={task.status}
-              onChangeStatus={(newStatus) => onChangeStatus(task._id, newStatus)}
+              onChangeStatus={(newStatus) => onChangeStatus(task._id, newStatus, false, null, localTimeSpentRef.current)}
               theme={theme}
             />
 

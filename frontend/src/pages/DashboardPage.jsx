@@ -28,6 +28,8 @@ const SidebarIcon = ({ className }) => (
 
 export default function DashboardPage() {
   const { theme, toggleTheme, lang, toggleLang } = useThemeLang();
+  const buttonRef = useRef(null);
+  const [buttonRight, setButtonRight] = useState(240);
   const [isPinned, setIsPinned] = useState(() => {
     if (typeof window !== "undefined") {
       const isMobileSize = window.innerWidth < 768;
@@ -75,6 +77,10 @@ export default function DashboardPage() {
       hoverTimeoutRef.current = null;
     }
     setIsHovered(true);
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setButtonRight(rect.right);
+    }
   };
 
   const handleMouseLeave = () => {
@@ -172,7 +178,8 @@ export default function DashboardPage() {
         <div
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="fixed left-0 top-[96px] h-[16px] w-60 z-30 bg-transparent pointer-events-auto"
+          style={{ width: `${buttonRight}px` }}
+          className="fixed left-0 top-[96px] h-[16px] z-30 bg-transparent pointer-events-auto"
         />
       )}
 
@@ -186,9 +193,10 @@ export default function DashboardPage() {
           opacity: isSidebarVisible ? 1 : 0,
         }}
         transition={{
-          type: "tween",
-          ease: "easeOut",
-          duration: 0.32,
+          type: "spring",
+          stiffness: 320,
+          damping: 34,
+          mass: 0.8,
         }}
         className={`
           flex flex-col border-r fixed left-0 w-60 z-50
@@ -296,6 +304,7 @@ export default function DashboardPage() {
                 {t.tasksTitle}
               </h1>
               <button
+                ref={buttonRef}
                 onClick={handleToggleClick}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}

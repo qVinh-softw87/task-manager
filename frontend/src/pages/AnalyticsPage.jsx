@@ -41,6 +41,8 @@ const ChartSkeleton = ({ isDark }) => (
 
 export default function AnalyticsPage() {
   const { theme, toggleTheme, lang, toggleLang } = useThemeLang();
+  const buttonRef = useRef(null);
+  const [buttonRight, setButtonRight] = useState(240);
   const [isPinned, setIsPinned] = useState(() => {
     if (typeof window !== "undefined") {
       const isMobileSize = window.innerWidth < 768;
@@ -92,6 +94,10 @@ export default function AnalyticsPage() {
       hoverTimeoutRef.current = null;
     }
     setIsHovered(true);
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setButtonRight(rect.right);
+    }
   };
 
   const handleMouseLeave = () => {
@@ -158,47 +164,48 @@ export default function AnalyticsPage() {
         <div
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="fixed left-0 top-[96px] h-[16px] w-60 z-30 bg-transparent pointer-events-auto"
+          style={{ width: `${buttonRight}px` }}
+          className="fixed left-0 top-[96px] h-[16px] z-30 bg-transparent pointer-events-auto"
         />
       )}
 
       {/* Sidebar */}
-      <aside
+      <motion.aside
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-350 ease-out border-r flex flex-col justify-between shadow-lg backdrop-blur-md ${
-          isSidebarVisible 
-            ? "w-60 translate-x-0" 
-            : (isMobile ? "w-60 -translate-x-full" : "w-60 -translate-x-[calc(100%-4rem)]")
-        } ${isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-200"}`}
+        initial={false}
+        animate={{
+          x: isSidebarVisible ? 0 : -240,
+          opacity: isSidebarVisible ? 1 : 0,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 320,
+          damping: 34,
+          mass: 0.8,
+        }}
+        className={`
+          flex flex-col border-r fixed left-0 w-60 z-50
+          ${isMobile ? "top-0 h-screen" : (isPinned ? "top-0 h-screen" : "top-[112px] h-[calc(100vh-112px)]")}
+          ${(!isPinned && isSidebarVisible) || isMobile ? "shadow-2xl" : ""}
+          ${isDark ? "border-slate-900/60 bg-[#0c101b]" : "border-slate-200/80 bg-white"}
+        `}
       >
-        <div className="p-4 flex flex-col h-full">
-          {/* Top Actions */}
-          <div className={`flex items-center mb-8 mt-2 transition-all duration-300 ${isSidebarVisible ? "justify-between" : "justify-end"}`}>
-            <div className={`flex items-center gap-2 overflow-hidden transition-all duration-300 ${isSidebarVisible ? "w-auto opacity-100" : "w-0 opacity-0"}`}>
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shadow-md ${isDark ? "bg-indigo-600" : "bg-indigo-600"}`}>
-                T
+        {/* Workspace Brand - only shown when pinned or on mobile */}
+        {(isPinned || isMobile) && (
+          <div className="mx-3 mt-3 flex items-center justify-between p-1 border-b pb-3 border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg flex-1 transition">
+              <div className={`flex h-7 w-7 items-center justify-center rounded-lg font-bold text-white shadow-md transition-all duration-300 ${
+                isDark 
+                  ? "bg-indigo-600 shadow-indigo-600/30" 
+                  : "bg-slate-950 shadow-slate-950/10"
+              }`}>
+                TM
               </div>
-              <span className="font-bold text-lg tracking-tight whitespace-nowrap">
-                {t.logo}
-              </span>
+              <span className={`text-sm font-bold tracking-tight transition-colors duration-300 ${isDark ? "text-slate-100" : "text-slate-900"}`}>{t.logo || "TaskManager"}</span>
             </div>
             
-            {!isMobile && (
-              <button
-                onClick={handleToggleClick}
-                className={`rounded-lg p-2 transition-all duration-150 border hidden lg:flex cursor-pointer ${
-                  isDark
-                    ? "border-slate-800 bg-[#131929] text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-                    : "border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-                title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
-              >
-                <SidebarIcon className="w-5 h-5" />
-              </button>
-            )}
-
-            {isMobile && isMobileOpen && (
+            {isMobile && (
               <button
                 onClick={() => setIsMobileOpen(false)}
                 className={`rounded-lg p-1.5 border transition-all duration-150 cursor-pointer ${
@@ -213,64 +220,65 @@ export default function AnalyticsPage() {
               </button>
             )}
           </div>
+        )}
 
-          {/* Navigation Links */}
-          <nav className="flex-1 space-y-2 mt-4">
-            <Link
-              to="/"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium border cursor-pointer ${
-                isDark
-                  ? "border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
-                  : "border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 flex-shrink-0">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-              </svg>
-              <span className={`whitespace-nowrap transition-all duration-300 ${isSidebarVisible ? "opacity-100" : "opacity-0"}`}>
-                {t.overview}
-              </span>
-            </Link>
-
-            <Link
-              to="/analytics"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-bold shadow-sm border cursor-pointer ${
-                isDark
-                  ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
-                  : "bg-indigo-50 text-indigo-700 border-indigo-100"
-              }`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 flex-shrink-0">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-              </svg>
-              <span className={`whitespace-nowrap transition-all duration-300 ${isSidebarVisible ? "opacity-100" : "opacity-0"}`}>
-                {t.analytics}
-              </span>
-            </Link>
-          </nav>
-
-          <button
-            onClick={logoutUser}
-            className={`mt-auto flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium border border-transparent cursor-pointer ${
+        {/* Navigation */}
+        <nav className="mt-4 space-y-1 px-3 text-sm">
+          <Link
+            to="/"
+            className={`rounded-lg px-3.5 py-2 font-semibold flex items-center gap-2.5 transition ${
               isDark
-                ? "text-red-400 hover:bg-red-500/10 hover:border-red-500/20"
-                : "text-red-600 hover:bg-red-50 hover:border-red-100"
+                ? "text-slate-400 hover:bg-slate-800/45 hover:text-slate-100 border border-transparent"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent"
             }`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-5 h-5 flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2050/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 flex-shrink-0">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            </svg>
+            <span>{t.overview}</span>
+          </Link>
+
+          <Link
+            to="/analytics"
+            className={`rounded-lg px-3.5 py-2 font-semibold flex items-center gap-2.5 transition ${
+              isDark
+                ? "bg-indigo-500/10 border border-indigo-500/20 text-indigo-400"
+                : "bg-indigo-50 border border-indigo-200/50 text-indigo-650"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 flex-shrink-0">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+            <span>{t.analytics}</span>
+          </Link>
+        </nav>
+
+        <div className="flex-1" />
+
+        {/* Sidebar Footer */}
+        <div className={`border-t p-3 ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+          <button
+            onClick={logoutUser}
+            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-bold border transition-all duration-200 ${
+              isDark
+                ? "border-slate-800 bg-slate-950/60 text-slate-400 hover:text-red-400 hover:border-red-950/50 hover:bg-red-950/20"
+                : "border-slate-200 bg-white text-slate-650 hover:text-red-650 hover:border-red-200 hover:bg-red-50"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2050/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-3.5 h-3.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
             </svg>
-            <span className={`whitespace-nowrap transition-all duration-300 ${isSidebarVisible ? "opacity-100" : "opacity-0"}`}>
-              {t.logout}
-            </span>
+            {t.logout}
           </button>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Main Content */}
       <main
-        className={`flex-1 px-4 pt-14 pb-8 md:px-6 md:pt-16 lg:pr-14 transition-all duration-300 w-full max-w-6xl mx-auto ${
-          isPinned ? "lg:ml-60" : (isMobile ? "" : "lg:ml-16")
+        className={`min-w-0 flex-1 px-4 pt-14 pb-8 md:px-6 md:pt-16 lg:pr-14 transition-all duration-300 w-full max-w-6xl mx-auto ${
+          isPinned
+            ? "pl-[264px] lg:pl-[296px]"
+            : "lg:pl-14"
         }`}
       >
         {/* Header */}
@@ -283,6 +291,7 @@ export default function AnalyticsPage() {
                 {t.analyticsTitle}
               </h1>
               <button
+                ref={buttonRef}
                 onClick={handleToggleClick}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
